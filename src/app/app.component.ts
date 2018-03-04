@@ -33,4 +33,17 @@ export class AppComponent {
     this.canvas.setWidth(this.canvasWidth);
     this.canvas.setHeight(this.canvasHeight);
   }
+
+  expandCanvas() {
+    console.log("Expand!");
+    this.canvasWidth += 100;
+    this.canvasHeight += 100;
+    this._updateCanvasSize();
+  }
+
+  compressCanvas() {
+    this.canvasWidth -= 100;
+    this.canvasHeight -= 100;
+    this._updateCanvasSize();
+  }
 }

@@ -27,25 +27,41 @@
         <div class="card-header">Options</div>
         <div class="card-body text-center">
           <div class="btn-group" role="group" aria-label="...">
-              <button data-toggle="tooltip" data-placement="bottom" title="Back Time" type="button" class="btn btn-outline-primary" [disabled]="!selected"
+              <button data-toggle="tooltip" data-placement="bottom" title="Back Time" type="button" class="btn btn-outline-primary"
                   (click)="backTime();">
                   <i class="fa fa-step-backward" aria-hidden="true"></i>
               </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" type="button" class="btn btn-outline-primary" [disabled]="!selected"
+              <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" type="button" class="btn btn-outline-primary"
                   (click)="advanceTime();">
                   <i class="fa fa-step-forward" aria-hidden="true"></i>
               </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Zoom In" type="button" class="btn btn-outline-primary" [disabled]="!selected"
+              <button data-toggle="tooltip" data-placement="bottom" title="Zoom In" type="button" class="btn btn-outline-primary"
                   (click)="zoomIn();">
                   <i class="fa fa-search-plus" aria-hidden="true"></i>
               </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Zoom Out" type="button" class="btn btn-outline-primary" [disabled]="!selected"
+              <button data-toggle="tooltip" data-placement="bottom" title="Zoom Out" type="button" class="btn btn-outline-primary"
                   (click)="zoomOut();">
                   <i class="fa fa-search-minus" aria-hidden="true"></i>
               </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" [disabled]="!selected"
+              <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary"
                   (click)="play()">
                   <i class="fa fa-play" aria-hidden="true"></i>
+              </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Canvas</div>
+        <div class="card-body text-center">
+          <div class="btn-group" role="group" aria-label="...">
+              <button data-toggle="tooltip" data-placement="bottom" title="Expand" type="button" class="btn btn-outline-primary"
+                  (click)="expandCanvas();">
+                  <i class="fa fa-expand" aria-hidden="true"></i>
+              </button>
+              <button data-toggle="tooltip" data-placement="bottom" title="Compress" type="button" class="btn btn-outline-primary"
+                  (click)="compressCanvas();">
+                  <i class="fa fa-compress" aria-hidden="true"></i>
               </button>
           </div>
         </div>
