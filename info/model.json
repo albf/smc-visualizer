@@ -1,0 +1,16 @@
+{
+	"nodes": [{
+		"code": "some code comes here",
+		"destinations": [1, 2],
+		"origins": [0]
+	}],
+	"changes": [{
+		"type": "modify || remove || add",
+		"target": 1,
+		"node": {
+			"code": "node can be null if type == remove",
+			"destinations": [1, 2],
+			"origins": [0]
+		}
+	}]
+}
