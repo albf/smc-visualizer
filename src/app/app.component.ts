@@ -22,7 +22,7 @@ export class AppComponent {
             nodes: [
                 {
                     code: "abc",
-                    destinations: [1, 3]
+                    destinations: [1, 3, 4, 5]
                 },
                 {
                     code: "dce",
@@ -36,6 +36,19 @@ export class AppComponent {
                     code: "ijk",
                     destinations: []
                 },
+
+                {
+                    code: "ijk",
+                    destinations: []
+                },
+
+
+                {
+                    code: "ijk",
+                    destinations: []
+                },
+
+
             ],
             changes: []
         })
