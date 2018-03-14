@@ -26,29 +26,50 @@ interface Trace {
 export class TraceGraph {
     graph: joint.dia.Graph;
     paper: joint.dia.Paper;
+    paperWidth: number;
+    paperHeight: number;
     scale = 1;
 
     constructor(width, height) {
+        this.paperWidth = width;
+        this.paperHeight = height;
+
         this.graph = new joint.dia.Graph;
 
         this.paper = new joint.dia.Paper({
             el: jQuery("#paper"),
-            width: width,
-            height: height,
+            width: this.paperWidth,
+            height: this.paperHeight,
             model: this.graph,
             gridSize: 1
         });
     }
 
-    updateLayout(): void {
-        joint.layout.DirectedGraph.layout(this.graph, {
-            setVertices: true,
-            ranker: "longest-path",
-            rankDir: "TB",
-            rankSep: 0, // TODO: find a good configuration here
-            edgeSep: 10,
-            nodeSep: 0
-        });
+    updateLayout(startNode: joint.shapes.basic.Rect): void {
+        let marginX = 0;
+        let marginY = 0;
+
+        // Draw twice: first one will just allow us to get the relative position
+        // for the startNode. With such values, we can correctly calculate margins
+        for (let x = 0; x < 2; x++) {
+            joint.layout.DirectedGraph.layout(this.graph, {
+                setVertices: true,
+                ranker: "longest-path",
+                rankDir: "TB",
+                rankSep: 0, // TODO: find a good configuration here
+                edgeSep: 10,
+                nodeSep: 0,
+                marginX: marginX,
+                marginY: marginY
+            });
+
+            let position = startNode.get('position');
+            let size = startNode.get('size');
+
+            // marginX is exactly the middle and marginX is just 2% paper size
+            marginX = (this.paperWidth / 2) - parseInt(position['x']) - (parseInt(size['width']) / 2);
+            marginY = (this.paperHeight / 50) - parseInt(position['y']);
+        }
     }
 
     createRect(code: string): joint.shapes.basic.Rect {
@@ -97,7 +118,7 @@ export class TraceGraph {
         })
 
         this.graph.addCells(graphElements);
-        this.updateLayout();
+        this.updateLayout(graphElements[0]);
     }
 
     zoomIn(): void {
