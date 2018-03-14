@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import "fabric";
-
-declare const fabric: any;
+import { TraceGraph } from "./graph";
 
 @Component({
   selector: 'app-root',
@@ -12,38 +10,51 @@ declare const fabric: any;
 export class AppComponent {
   private title = 'SMC Visualizer';
 
-  private canvas: any;
-  private canvasWidth = 800;
-  private canvasHeight = 600;
+  private paperWidth = 800;
+  private paperHeight = 600;
 
   constructor() {}
 
   ngOnInit() {
-    this.canvas = new fabric.Canvas('canvas', {
-      hoverCursor: 'pointer',
-      selection: true,
-      selectionBorderColor: 'blue'
-    });
-
-    this._updateCanvasSize();
-
+    let graph = new TraceGraph(this.paperWidth, this.paperHeight);
+    graph.draw({
+        nodes: [
+            {
+                code: "abc",
+                destinations: [1, 3]
+            },
+            {
+                code: "dce",
+                destinations: [2, 3]
+            },
+            {
+                code: "fgh",
+                destinations: [3]
+            },
+            {
+                code: "ijk",
+                destinations: []
+            },
+        ],
+        changes: []
+    })
   }
 
   _updateCanvasSize() {
-    this.canvas.setWidth(this.canvasWidth);
-    this.canvas.setHeight(this.canvasHeight);
+    //this.canvas.setWidth(this.canvasWidth);
+    //this.canvas.setHeight(this.canvasHeight);
   }
 
   expandCanvas() {
-    console.log("Expand!");
-    this.canvasWidth += 100;
-    this.canvasHeight += 100;
-    this._updateCanvasSize();
+    //console.log("Expand!");
+    //this.canvasWidth += 100;
+    //this.canvasHeight += 100;
+    //this._updateCanvasSize();
   }
 
   compressCanvas() {
-    this.canvasWidth -= 100;
-    this.canvasHeight -= 100;
-    this._updateCanvasSize();
+    //this.canvasWidth -= 100;
+    //this.canvasHeight -= 100;
+    //this._updateCanvasSize();
   }
 }

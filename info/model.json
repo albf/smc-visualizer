@@ -7,7 +7,7 @@
 	"changes": [{
 		"type": "modify || remove || add",
 		"target": 1,
-		"node": {
+		"result": {
 			"code": "node can be null if type == remove",
 			"destinations": [1, 2],
 			"origins": [0]
