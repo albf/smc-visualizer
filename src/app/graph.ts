@@ -150,4 +150,18 @@ export class TraceGraph {
         this.paper.scale(this.scale, this.scale);
         this.updateLayout();
     }
+
+    expandPaper(): void {
+        this.paperWidth += 100;
+        this.paperHeight += (100 * this.paperHeight / this.paperWidth);
+        this.paper.setDimensions(this.paperWidth, this.paperHeight);
+    }
+
+    compressPaper(): void {
+        if (this.paperWidth > 100) {
+            this.paperWidth -= 100;
+            this.paperHeight -= (100 * this.paperHeight / this.paperWidth);
+        }
+        this.paper.setDimensions(this.paperWidth, this.paperHeight);
+    }
 }

@@ -68,15 +68,10 @@ export class AppComponent {
     }
 
     expandCanvas() {
-        //console.log("Expand!");
-        //this.canvasWidth += 100;
-        //this.canvasHeight += 100;
-        //this._updateCanvasSize();
+        this.graph.expandPaper();
     }
 
     compressCanvas() {
-        //this.canvasWidth -= 100;
-        //this.canvasHeight -= 100;
-        //this._updateCanvasSize();
+        this.graph.compressPaper();
     }
 }
