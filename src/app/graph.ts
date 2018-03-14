@@ -26,6 +26,7 @@ interface Trace {
 export class TraceGraph {
     graph: joint.dia.Graph;
     paper: joint.dia.Paper;
+    scale = 1;
 
     constructor(width, height) {
         this.graph = new joint.dia.Graph;
@@ -97,5 +98,18 @@ export class TraceGraph {
 
         this.graph.addCells(graphElements);
         this.updateLayout();
+    }
+
+    zoomIn(): void {
+        this.scale += 0.1;
+        this.paper.scale(this.scale, this.scale);
+    }
+
+    zoomOut(): void {
+        if (this.scale > 0.1) {
+            this.scale -= 0.1;
+        }
+        console.log("scale: " + (this.scale));
+        this.paper.scale(this.scale, this.scale);
     }
 }
