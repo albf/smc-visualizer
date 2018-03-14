@@ -23,17 +23,17 @@ interface Trace {
 
 // Actual graph and helper functions
 
-export class Graph {
+export class TraceGraph {
     graph: joint.dia.Graph;
     paper: joint.dia.Paper;
 
-    constructor() {
+    constructor(width, height) {
         this.graph = new joint.dia.Graph;
 
         this.paper = new joint.dia.Paper({
             el: jQuery("#paper"),
-            width: 800,
-            height: 600,
+            width: width,
+            height: height,
             model: this.graph,
             gridSize: 1
         });
