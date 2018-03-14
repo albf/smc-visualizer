@@ -54,7 +54,7 @@ export class TraceGraph {
         return new joint.shapes.basic.Rect({
             position: { x: 100, y: 30 },
             size: { width: 100, height: 30 }, // TODO: find how to resize based on text
-            attrs: { rect: { fill: 'blue' }, text: { text: code, fill: 'white' } }
+            attrs: { rect: { fill: 'white' }, text: { text: code, fill: 'gray' } }
         });
     }
 
@@ -73,9 +73,10 @@ export class TraceGraph {
             }
         };
 
-        return new joint.dia.Link({attrs,
-                source: { id: sourceId } ,
-                target: { id: targetId }
+        return new joint.dia.Link({
+            attrs,
+            source: { id: sourceId },
+            target: { id: targetId }
         });
     }
 
@@ -83,7 +84,7 @@ export class TraceGraph {
         let graphElements = [];
 
         // Frist create nodes
-        for(let n of trace.nodes) {
+        for (let n of trace.nodes) {
             graphElements.push(this.createRect(n.code));
         }
 
