@@ -1,78 +1,68 @@
 <div class="container">
 
-<!-- First panel [ ... [] [] []] -->
-  <div class="row">
-    <div class="col-xl-12 text-right top-bar">
-        <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary"
-            (click)="loadTraceFile();">
-            <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
-        <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary"
-            (click)="rasterize();">
-            <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
-        <button data-toggle="tooltip" data-placement="bottom" title="Export to SVG" type="button" class="btn btn-primary"
-            (click)="rasterizeSVG();">
-            <i class="fa fa-download" aria-hidden="true"></i> Export to SVG</button>
-        <button data-toggle="tooltip" data-placement="bottom" title="Clear" type="button" class="btn btn-danger"
-            (click)="confirmClear();">
-            <i class="fa fa-ban" aria-hidden="true"></i> Clear</button>
-    </div>
-  </div>
-  <hr>
-
-<!--Main part [Options] [Canvas].-->
-  <div class="row">
-
-    <div class="col-xl-3">
-      <div class="card">
-        <div class="card-header">Options</div>
-        <div class="card-body text-center">
-          <div class="btn-group" role="group" aria-label="...">
-              <button data-toggle="tooltip" data-placement="bottom" title="Back Time" type="button" class="btn btn-outline-primary"
-                  (click)="backTime();">
-                  <i class="fa fa-step-backward" aria-hidden="true"></i>
-              </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" type="button" class="btn btn-outline-primary"
-                  (click)="advanceTime();">
-                  <i class="fa fa-step-forward" aria-hidden="true"></i>
-              </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Zoom In" type="button" class="btn btn-outline-primary"
-                  (click)="zoomIn();">
-                  <i class="fa fa-search-plus" aria-hidden="true"></i>
-              </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Zoom Out" type="button" class="btn btn-outline-primary"
-                  (click)="zoomOut();">
-                  <i class="fa fa-search-minus" aria-hidden="true"></i>
-              </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary"
-                  (click)="play()">
-                  <i class="fa fa-play" aria-hidden="true"></i>
-              </button>
-          </div>
+    <!-- First panel [ ... [] [] []] -->
+    <div class="row">
+        <div class="col-xl-12 text-right top-bar">
+            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile();">
+                <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
+            <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
+                <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
+            <button data-toggle="tooltip" data-placement="bottom" title="Export to SVG" type="button" class="btn btn-primary" (click)="rasterizeSVG();">
+                <i class="fa fa-download" aria-hidden="true"></i> Export to SVG</button>
+            <button data-toggle="tooltip" data-placement="bottom" title="Clear" type="button" class="btn btn-danger" (click)="confirmClear();">
+                <i class="fa fa-ban" aria-hidden="true"></i> Clear</button>
         </div>
-      </div>
-
-    <!-- TODO: add some space between cards -->
-
-      <div class="card">
-        <div class="card-header">Canvas</div>
-        <div class="card-body text-center">
-          <div class="btn-group" role="group" aria-label="...">
-              <button data-toggle="tooltip" data-placement="bottom" title="Expand" type="button" class="btn btn-outline-primary"
-                  (click)="expandCanvas();">
-                  <i class="fa fa-expand" aria-hidden="true"></i>
-              </button>
-              <button data-toggle="tooltip" data-placement="bottom" title="Compress" type="button" class="btn btn-outline-primary"
-                  (click)="compressCanvas();">
-                  <i class="fa fa-compress" aria-hidden="true"></i>
-              </button>
-          </div>
-        </div>
-      </div>
     </div>
+    <hr>
 
-    <!-- TODO: add nice looking border -->
-    <!-- TODO: add scrool -->
-    <div id="paper"></div>
+    <!--Main part [Options] [Canvas].-->
+    <div class="row">
 
-  </div>
+        <div class="col-xl-3">
+            <div class="card">
+                <div class="card-header">Navigation controls</div>
+                <div class="card-body text-center">
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Back Time" type="button" class="btn btn-outline-primary" (click)="backTime();">
+                            <i class="fa fa-step-backward" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" type="button" class="btn btn-outline-primary"
+                            (click)="advanceTime();">
+                            <i class="fa fa-step-forward" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
+                            <i class="fa fa-play" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            <div class="card">
+                <div class="card-header">Graph canvas options</div>
+                <div class="card-body text-center">
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Zoom In" type="button" class="btn btn-outline-primary" (click)="zoomIn();">
+                            <i class="fa fa-search-plus" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Zoom Out" type="button" class="btn btn-outline-primary" (click)="zoomOut();">
+                            <i class="fa fa-search-minus" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Expand" type="button" class="btn btn-outline-primary" (click)="expandCanvas();">
+                            <i class="fa fa-expand" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Compress" type="button" class="btn btn-outline-primary" (click)="compressCanvas();">
+                            <i class="fa fa-compress" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="card-nav">1 of 1000</div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- TODO: add nice looking border -->
+        <!-- TODO: add scrool -->
+        <div id="paper"></div>
+
+    </div>
