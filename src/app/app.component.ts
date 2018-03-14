@@ -133,7 +133,25 @@ export class AppComponent {
       source: { id: rect.id },
       target: { id: rect2.id }
     }); */
-    var link1 = new Link().connect(rect.id, rect2.id);
+    //var link1 = new Link().connect(rect.id, rect2.id);
+    var attrs = {
+          '.connection': {
+              stroke: 'gray',
+              strokeWidth: 2,
+              pointerEvents: 'none',
+              targetMarker: {
+                  type: 'path',
+                  fill: 'gray',
+                  stroke: 'none',
+                  d: 'M 10 -10 0 0 10 10 z'
+              }
+          }
+      };
+
+    var link1 = new joint.dia.Link({attrs,
+        source: { id: rect.id } ,
+        target: { id: rect2.id}
+    });
 
     var link2 = new joint.dia.Link({
       source: { id: rect.id },
@@ -152,7 +170,15 @@ export class AppComponent {
 
      graph.addCells([rect, rect2, rect3, rect4, link1, link2, link3, link4]);
 
-     joint.layout.DirectedGraph.layout(graph, {
+    joint.layout.DirectedGraph.layout(graph, {
+        setVertices: true,
+        ranker: "longest-path",
+        rankDir: "TB",
+        rankSep: 0,
+        edgeSep: 0,
+        nodeSep: 0
+    });
+    /* joint.layout.DirectedGraph.layout(graph, {
                 setVertices: true,
                 setLabels: true,
                 ranker: "longer-path",
@@ -161,7 +187,7 @@ export class AppComponent {
                 rankSep: 0,
                 edgeSep: 0,
                 nodeSep: 0
-            });
+            }); */
   }
 
   _updateCanvasSize() {
