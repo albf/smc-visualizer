@@ -145,10 +145,9 @@ export class TraceGraph {
     zoomOut(): void {
         if (this.scale > 0.1) {
             this.scale -= 0.1;
+            this.paper.scale(this.scale, this.scale);
+            this.updateLayout();
         }
-        console.log("scale: " + (this.scale));
-        this.paper.scale(this.scale, this.scale);
-        this.updateLayout();
     }
 
     expandPaper(): void {
