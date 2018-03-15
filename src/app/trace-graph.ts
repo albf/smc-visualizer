@@ -2,26 +2,9 @@ import * as jQuery from 'jquery';
 import * as _ from 'lodash';
 import * as $ from 'backbone';
 import * as joint from 'jointjs';
+import { Trace } from './trace';
 
-// Model definitions - later transformed in a jointjs graph
-
-interface TraceNode {
-    code: string,
-    destinations: number[]
-}
-
-interface TraceChange {
-    type: 'modify' | 'remove' | 'add',
-    target: number
-    result: TraceNode
-}
-
-interface Trace {
-    nodes: TraceNode[];
-    changes: TraceChange[];
-}
-
-// Actual graph and helper functions
+// Actual graph display and helper functions
 
 export class TraceGraph {
     graph: joint.dia.Graph;
@@ -50,7 +33,7 @@ export class TraceGraph {
         });
     }
 
-    updateLayout(): void {
+    private updateLayout(): void {
         let marginX = 0;
         let marginY = 0;
 
@@ -96,7 +79,7 @@ export class TraceGraph {
         return metrics.width;
     };
 
-    createRect(code: string): joint.shapes.basic.Rect {
+    private createRect(code: string): joint.shapes.basic.Rect {
         const lines = code.split(/\r\n|\r|\n/);
         const fontSize = 14;
         const fontFamily = "sans-serif";
@@ -116,7 +99,7 @@ export class TraceGraph {
         });
     }
 
-    createLink(sourceId: string | number, targetId: string | number): joint.dia.Link {
+    private createLink(sourceId: string | number, targetId: string | number): joint.dia.Link {
         let attrs = {
             '.connection': {
                 stroke: 'gray',
@@ -142,9 +125,9 @@ export class TraceGraph {
         let graphElements = [];
 
         // Frist create nodes
-        for (let n of trace.nodes) {
+        trace.nodes.forEach((n) => {
             graphElements.push(this.createRect(n.code));
-        }
+        });
 
         // Then, create edges - mandatory to do be after nodes
         trace.nodes.forEach((n, sourceIndex) => {
@@ -175,16 +158,14 @@ export class TraceGraph {
     }
 
     expandPaper(): void {
-        this.paperWidth += 100;
-        this.paperHeight += (100 * this.paperHeight / this.paperWidth);
+        this.paperHeight += 100;
         this.paper.setDimensions(this.paperWidth, this.paperHeight);
     }
 
     compressPaper(): void {
-        if (this.paperWidth > 100) {
-            this.paperWidth -= 100;
-            this.paperHeight -= (100 * this.paperHeight / this.paperWidth);
+        if (this.paperHeight > 100) {
+            this.paperHeight -= 100;
+            this.paper.setDimensions(this.paperWidth, this.paperHeight);
         }
-        this.paper.setDimensions(this.paperWidth, this.paperHeight);
     }
 }
