@@ -33,14 +33,15 @@ export class TraceGraph {
 
     startNode: joint.shapes.basic.Rect;
 
-    constructor(width, height) {
-        this.paperWidth = width;
-        this.paperHeight = height;
+    constructor() {
+        const element = jQuery("#graph");
+        this.paperWidth = element.width();
+        this.paperHeight = element.height();
 
         this.graph = new joint.dia.Graph;
 
         this.paper = new joint.dia.Paper({
-            el: jQuery("#paper"),
+            el: element,
             width: this.paperWidth,
             height: this.paperHeight,
             model: this.graph,

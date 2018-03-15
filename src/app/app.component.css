@@ -19,8 +19,11 @@
         background: rgba(0, 0, 0, 0.03);
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 0.4rem;
+        min-height: 500px;
     }
-
-    .joint-paper > svg {
-        top: 50px;
+    
+    #graph {
+        height: 100%;
+        overflow: scroll;
+        width: 100%;
     }

@@ -10,14 +10,12 @@ import { TraceGraph } from "./graph";
 export class AppComponent {
     private title = 'SMC Visualizer';
 
-    private paperWidth = 800;
-    private paperHeight = 600;
     private graph;
 
     constructor() { }
 
     ngOnInit() {
-        this.graph = new TraceGraph(this.paperWidth, this.paperHeight);
+        this.graph = new TraceGraph();
         this.graph.draw({
             nodes: [
                 {
