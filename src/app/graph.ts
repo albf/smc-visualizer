@@ -31,6 +31,7 @@ export class TraceGraph {
     paperHeight: number;
     scale = 1;
 
+    textCanvas: any;
     startNode: joint.shapes.basic.Rect;
 
     constructor() {
@@ -85,11 +86,33 @@ export class TraceGraph {
         joint.layout.DirectedGraph.layout(this.graph, opts);
     }
 
+    // Use canvas meaureText to calculate text width. Shouldn't mess with the DOM.
+    private getTextWidth(text, font) {
+        // if exists, use cached canvas for better performance
+        var canvas = this.textCanvas || (this.textCanvas = document.createElement("canvas"));
+        var context = canvas.getContext("2d");
+        context.font = font;
+        var metrics = context.measureText(text);
+        return metrics.width;
+    };
+
     createRect(code: string): joint.shapes.basic.Rect {
+        const lines = code.split(/\r\n|\r|\n/);
+        const fontSize = 14;
+        const fontFamily = "sans-serif";
+        const borderSize = 10;
+        let maxWidth = 0;
+
+        lines.forEach((value) => {
+            let width = this.getTextWidth(value, String(fontSize + "px " + String(fontFamily)));
+            if (width > maxWidth) {
+                maxWidth = width;
+            }
+        });
+
         return new joint.shapes.basic.Rect({
-            position: { x: 100, y: 30 },
-            size: { width: 100, height: 30 }, // TODO: find how to resize based on text
-            attrs: { rect: { fill: 'white' }, text: { text: code, fill: 'gray' } }
+            size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
+            attrs: { rect: { fill: 'white' }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
         });
     }
 
