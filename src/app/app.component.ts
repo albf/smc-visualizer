@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { TraceGraph } from "./trace-graph";
-import { Trace } from "./trace";
+import { Trace, TraceModificationType } from "./trace";
 
 @Component({
     selector: 'app-root',
@@ -23,8 +23,15 @@ export class AppComponent {
             .appendNode(3, "d", [])
             .appendNode(4, "e", [])
             .appendNode(5, "e", [])
+            // .appendTraceModification(TraceModificationType.remove, [5])
+            // .createTraceModificationNode(6, "new code", [3, 4], [0, 1])
+            // .appendTraceModification(TraceModificationType.add, [0])
+            .createTraceModificationNode(2, "changed code", [3, 4], [])
+            .appendTraceModification(TraceModificationType.modify, [2])
             .assignInverse()
 
+        console.log(trace);
+        trace.applyNext();
         console.log(trace);
 
         this.graph = new TraceGraph();

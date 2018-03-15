@@ -13,7 +13,7 @@ interface TraceGraphChange {
     index: number,
 }
 
-enum TraceModificationType {
+export enum TraceModificationType {
     modify = 'modify',
     add = 'add',
     remove = 'remove',
@@ -30,6 +30,7 @@ interface TraceModification {
 }
 
 export class Trace {
+    counter: number;
     nodes: Map<number, TraceNode>;                  // The graph, represented using a map
     increments: TraceModification[];
     modifications: TraceModification[];
@@ -37,7 +38,11 @@ export class Trace {
     private traceGraphChanges: TraceGraphChange[];  // Used by the builder
 
     constructor() {
+        this.counter = 0;
         this.nodes = new Map<number, TraceNode>();
+        this.increments = [];
+        this.modifications = [];
+
         this.traceGraphChanges = [];
         this.assignInverse();
     }
@@ -67,12 +72,14 @@ export class Trace {
     appendTraceModification(type: TraceModificationType, targets: number[]): Trace {
         let modification = {
             type: type,
-            targets: targets
+            targets: targets,
+            change: null
         }
         if (this.traceGraphChanges != null) {
-            modification['change'] = this.traceGraphChanges;
+            modification.change = this.traceGraphChanges;
             this.traceGraphChanges = null;
         }
+        this.modifications.push(modification);
         return this;
     }
 
@@ -103,6 +110,11 @@ export class Trace {
         return false;
     }
 
+    applyNext(): void {
+        this.apply(this.modifications[this.counter]);
+        this.counter++;
+    }
+
     apply(traceModification: TraceModification): void {
         if (traceModification == null) {
             console.log("Empty traceModification");
@@ -111,12 +123,15 @@ export class Trace {
         switch (traceModification.type) {
             case TraceModificationType.modify: {
                 this.applyModify(traceModification);
+                break;
             }
             case TraceModificationType.add: {
                 this.applyAdd(traceModification);
+                break;
             }
             case TraceModificationType.remove: {
                 this.applyRemove(traceModification);
+                break;
             }
             default: {
                 console.log('Error, unknown type for traceModification: ' + traceModification);
@@ -128,6 +143,10 @@ export class Trace {
         if (!this.hasSameLength(traceModification.targets, traceModification.change)) return;
         traceModification.targets.forEach((t, i) => {
             if (!this.hasNode(t, true)) return;
+            if (t != traceModification.change[i].index) {
+                console.log("Warning: Mismatch index for traceModification. Using target value.");
+            }
+
             let changeNode = traceModification.change[i].raw;
             let node = this.nodes.get(t);
 
@@ -138,7 +157,8 @@ export class Trace {
                 node.destinations.forEach((v) => {
                     node.origins.filter(item => item != t);
                 });
-                this.nodes.get(t).destinations = traceModification.change[i].raw.destinations;
+                let dst = JSON.parse(JSON.stringify(changeNode.destinations));
+                this.nodes.get(t).destinations = dst;
             }
         });
     }
@@ -163,16 +183,17 @@ export class Trace {
     }
 
     private applyRemove(traceModification: TraceModification): void {
-        if (!this.hasSameLength(traceModification.targets, traceModification.change)) return;
         traceModification.targets.forEach((t, i) => {
             if (!this.hasNode(t, true)) {
                 return;
             }
 
             this.nodes.get(t).origins.forEach((r) => {
-                this.nodes.get(t).destinations.filter((d) => !this.hasNode(d, null));
+                this.nodes.get(r).destinations = this.nodes.get(r).destinations.filter((d) => d != t);
             });
             this.nodes.delete(t);
+
+            // TODO: Also remove orphans
         });
     }
 
