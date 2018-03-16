@@ -86,9 +86,9 @@ export class Trace {
             targets: targets,
             change: null
         }
-        if (this.traceGraphChanges != null) {
+        if (this.traceGraphChanges.length > 0) {
             modification.change = this.traceGraphChanges;
-            this.traceGraphChanges = null;
+            this.traceGraphChanges = [];
         }
         this.modifications.push(modification);
         return this;
@@ -196,9 +196,11 @@ export class Trace {
                 break;
             }
             case TraceModificationType.join: {
+                this.peekJoin(traceModification);
                 break;
             }
             case TraceModificationType.split: {
+                this.peekSplit(traceModification);
                 break;
             }
             default: {
@@ -308,19 +310,27 @@ export class Trace {
         });
     }
 
-    private applyJoin(traceModification: TraceModification): void {
+    private isJoinValid(traceModification: TraceModification): boolean {
         if (traceModification.targets.length != 2) {
             console.log("Error: join should have exactly two targets");
-            return;
+            return false;
         } else if ((traceModification.change.length == 0) ||
             (traceModification.change[0].raw.code == null)) {
 
             console.log("Error: join requires new code");
-            return;
+            return false;
         } else if ((traceModification.change[0].raw.origins != null) &&
             (traceModification.change[0].raw.origins.length != 0)) {
 
             console.log("Error: join don't accept origin change");
+            return false;
+        }
+
+        return true;
+    }
+
+    private applyJoin(traceModification: TraceModification): void {
+        if (!this.isJoinValid(traceModification)) {
             return;
         }
 
@@ -351,12 +361,40 @@ export class Trace {
         // TODO: Check for orphans?
     }
 
-    private applySplit(traceModification: TraceModification): void {
+    private peekJoin(traceModification: TraceModification): void {
+        if (!this.isJoinValid(traceModification)) {
+            return;
+        }
+
+        this.peekNodes.set(0, this.createNode("Join", [1, 2], null));
+
+        let t0 = traceModification.targets[0];
+        let t1 = traceModification.targets[1];
+
+        if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
+
+        let node0 = this.nodes.get(t0);
+        let node1 = this.nodes.get(t1);
+
+        this.peekNodes.set(1, this.createNode(node0.code, [3], null));
+        this.peekNodes.set(2, this.createNode(node1.code, [3], null));
+
+        this.peekNodes.set(3, this.createNode(traceModification.change[0].raw.code, [], null));
+    }
+
+    private isSplitValid(traceModification: TraceModification): boolean {
         if (traceModification.targets.length != 1) {
             console.log("Error: splits should have exactly one target");
-            return;
+            return false;
         } else if (traceModification.change.length != 2) {
             console.log("Error: join requires new code");
+            return false;
+        }
+        return true;
+    }
+
+    private applySplit(traceModification: TraceModification): void {
+        if (this.isSplitValid(traceModification)) {
             return;
         }
 
@@ -372,9 +410,25 @@ export class Trace {
 
         // Add c0 and c1
         this.applyAdd({
-            type: TraceModificationType.add, targets: [t0, t0],
+            type: TraceModificationType.add,
+            targets: [t0, t0],
             change: change
         });
+    }
+
+    private peekSplit(traceModification: TraceModification): void {
+        if (!this.isSplitValid(traceModification)) {
+            return;
+        }
+
+        this.peekNodes.set(0, this.createNode("split", [1], null));
+
+        let change = traceModification.change;
+        let original = this.nodes.get(traceModification.targets[0]);
+
+        this.peekNodes.set(1, this.createNode(original.code, [2, 3], null));
+        this.peekNodes.set(2, this.createNode(change[0].raw.code, [], null));
+        this.peekNodes.set(3, this.createNode(change[1].raw.code, [], null));
     }
 
 }
