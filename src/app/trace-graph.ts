@@ -122,17 +122,20 @@ export class TraceGraph {
     }
 
     draw(trace: Trace): void {
-        let graphElements = [];
+        const graphElements = [];
+        const nodesMap = new Map<number, joint.shapes.basic.Rect>();  // Needed to created links
 
         // Frist create nodes
-        trace.nodes.forEach((n) => {
-            graphElements.push(this.createRect(n.code));
+        trace.nodes.forEach((n, k) => {
+            const rect = this.createRect(n.code);
+            graphElements.push(rect);
+            nodesMap.set(k, rect);
         });
 
         // Then, create edges - mandatory to do be after nodes
         trace.nodes.forEach((n, sourceIndex) => {
             n.destinations.forEach((targetIndex) => {
-                graphElements.push(this.createLink(graphElements[sourceIndex].id, graphElements[targetIndex].id));
+                graphElements.push(this.createLink(nodesMap.get(sourceIndex).id, nodesMap.get(targetIndex).id));
             })
         })
 

@@ -26,7 +26,7 @@ interface TraceModification {
     type: TraceModificationType,
     targets: number[],
 
-    change: TraceGraphChange[],
+    change?: TraceGraphChange[],
 }
 
 export class Trace {
@@ -133,6 +133,14 @@ export class Trace {
                 this.applyRemove(traceModification);
                 break;
             }
+            case TraceModificationType.join: {
+                this.applyJoin(traceModification);
+                break;
+            }
+            case TraceModificationType.split: {
+                this.applySplit(traceModification);
+                break;
+            }
             default: {
                 console.log('Error, unknown type for traceModification: ' + traceModification);
             }
@@ -191,9 +199,81 @@ export class Trace {
             this.nodes.get(t).origins.forEach((r) => {
                 this.nodes.get(r).destinations = this.nodes.get(r).destinations.filter((d) => d != t);
             });
+            this.nodes.get(t).destinations.forEach((r) => {
+                this.nodes.get(r).origins = this.nodes.get(r).origins.filter((d) => { d != t });
+            });
             this.nodes.delete(t);
 
-            // TODO: Also remove orphans
+            // TODO: Check for orphans
+        });
+    }
+
+    private applyJoin(traceModification: TraceModification): void {
+        if (traceModification.targets.length != 2) {
+            console.log("Error: join should have exactly two targets");
+            return;
+        } else if ((traceModification.change.length == 0) ||
+            (traceModification.change[0].raw.code == null)) {
+
+            console.log("Error: join requires new code");
+            return;
+        } else if ((traceModification.change[0].raw.origins != null) &&
+            (traceModification.change[0].raw.origins.length != 0)) {
+
+            console.log("Error: join don't accept origin change");
+            return;
+        }
+
+        let t0 = traceModification.targets[0];
+        let t1 = traceModification.targets[1];
+
+        if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
+
+        let node0 = this.nodes.get(t0);
+        let node1 = this.nodes.get(t1);
+
+        // Move node1 origins to node0
+        node1.origins.forEach((r) => {
+            // Check if wasn't already a origin or adding to itself
+            if (this.nodes.get(r).destinations.indexOf(t0) < 0 && t0 != r) {
+                this.nodes.get(r).destinations.push(t0)
+                node0.origins.push(r);
+            }
+        });
+
+        // Set destinations and code
+        node0.destinations = traceModification.change[0].raw.destinations.slice();
+        node0.code = traceModification.change[0].raw.code;
+
+        // Remove node1
+        this.applyRemove({ type: TraceModificationType.remove, targets: [t1] });
+
+        // TODO: Check for orphans
+    }
+
+    private applySplit(traceModification: TraceModification): void {
+        if (traceModification.targets.length != 1) {
+            console.log("Error: splits should have exactly one target");
+            return;
+        } else if (traceModification.change.length != 2) {
+            console.log("Error: join requires new code");
+            return;
+        }
+
+        let t0 = traceModification.targets[0];
+        let change = traceModification.change;
+
+        if (this.hasNode(change[0].index, false) || this.hasNode(change[1].index, false)) {
+            console.log("Error: split new nods should be new values");
+        }
+
+        // Remove t0
+        this.applyRemove({ type: TraceModificationType.remove, targets: [t0] });
+
+        // Add c0 and c1
+        this.applyAdd({
+            type: TraceModificationType.add, targets: [t0, t0],
+            change: change
         });
     }
 

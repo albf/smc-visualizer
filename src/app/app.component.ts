@@ -22,12 +22,24 @@ export class AppComponent {
             .appendNode(2, "c", [3])
             .appendNode(3, "d", [])
             .appendNode(4, "e", [])
-            .appendNode(5, "e", [])
+            .appendNode(5, "f", [6])
+            .appendNode(6, "g", [7])
+            .appendNode(7, "h", [])
             // .appendTraceModification(TraceModificationType.remove, [5])
+
             // .createTraceModificationNode(6, "new code", [3, 4], [0, 1])
             // .appendTraceModification(TraceModificationType.add, [0])
-            .createTraceModificationNode(2, "changed code", [3, 4], [])
-            .appendTraceModification(TraceModificationType.modify, [2])
+
+            //.createTraceModificationNode(10, "changed code", [3, 4], [])
+            //.appendTraceModification(TraceModificationType.modify, [2])
+
+            //.createTraceModificationNode(10, "joined code", [7], [])
+            //.appendTraceModification(TraceModificationType.join, [5, 6])
+
+            .createTraceModificationNode(11, "g-1", [7], [5])
+            .createTraceModificationNode(12, "g-2", [7], [5])
+            .appendTraceModification(TraceModificationType.split, [6])
+
             .assignInverse()
 
         console.log(trace);
