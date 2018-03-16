@@ -142,6 +142,8 @@ export class TraceGraph {
         // Save starting node
         this.startNode = graphElements[0];
 
+        // TODO: Might be optmized by only changing the modified nodes
+        this.graph.clear();
         this.graph.addCells(graphElements);
         this.updateLayout();
     }

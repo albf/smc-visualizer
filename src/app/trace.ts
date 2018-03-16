@@ -110,15 +110,20 @@ export class Trace {
         return false;
     }
 
-    applyNext(): void {
-        this.apply(this.modifications[this.counter]);
+    applyNext(): boolean {
+        // No more modifications allowed
+        if (this.counter >= this.modifications.length) {
+            return false;
+        }
+
         this.counter++;
+        return this.apply(this.modifications[this.counter - 1]);
     }
 
-    apply(traceModification: TraceModification): void {
+    apply(traceModification: TraceModification): boolean {
         if (traceModification == null) {
             console.log("Empty traceModification");
-            return;
+            return false;
         }
         switch (traceModification.type) {
             case TraceModificationType.modify: {
@@ -143,8 +148,10 @@ export class Trace {
             }
             default: {
                 console.log('Error, unknown type for traceModification: ' + traceModification);
+                return false;
             }
         }
+        return true;
     }
 
     private applyModify(traceModification: TraceModification): void {

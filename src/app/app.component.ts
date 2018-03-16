@@ -12,6 +12,7 @@ export class AppComponent {
     private title = 'SMC Visualizer';
 
     private graph: TraceGraph;
+    private trace: Trace;
 
     constructor() { }
 
@@ -42,12 +43,19 @@ export class AppComponent {
 
             .assignInverse()
 
-        console.log(trace);
-        trace.applyNext();
-        console.log(trace);
+        //console.log(trace);
+        //trace.applyNext();
+        //console.log(trace);
 
         this.graph = new TraceGraph();
         this.graph.draw(trace);
+        this.trace = trace;
+    }
+
+    advanceTime() {
+        if (this.trace.applyNext()) {
+            this.graph.draw(this.trace);
+        }
     }
 
     zoomIn() {
@@ -56,11 +64,6 @@ export class AppComponent {
 
     zoomOut() {
         this.graph.zoomOut()
-    }
-
-    _updateCanvasSize() {
-        //this.canvas.setWidth(this.canvasWidth);
-        //this.canvas.setHeight(this.canvasHeight);
     }
 
     expandCanvas() {
