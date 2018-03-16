@@ -27,27 +27,62 @@ export class TraceGraph {
     graph: joint.dia.Graph;
     paper: joint.dia.Paper;
 
-    constructor(width, height) {
+    paperWidth: number;
+    paperHeight: number;
+    scale = 1;
+
+    startNode: joint.shapes.basic.Rect;
+
+    constructor() {
+        const element = jQuery("#graph");
+        this.paperWidth = element.width();
+        this.paperHeight = element.height();
+
         this.graph = new joint.dia.Graph;
 
         this.paper = new joint.dia.Paper({
-            el: jQuery("#paper"),
-            width: width,
-            height: height,
+            el: element,
+            width: this.paperWidth,
+            height: this.paperHeight,
             model: this.graph,
             gridSize: 1
         });
     }
 
     updateLayout(): void {
-        joint.layout.DirectedGraph.layout(this.graph, {
+        let marginX = 0;
+        let marginY = 0;
+
+        let rankDir: 'TB' | 'BT' | 'LR' | 'RL';
+        let ranker: 'network-simplex' | 'tight-tree' | 'longest-path';
+
+        rankDir = 'TB';
+        ranker = 'longest-path';
+
+        let opts = {
             setVertices: true,
-            ranker: "longest-path",
-            rankDir: "TB",
+            ranker: ranker,
+            rankDir: rankDir,
             rankSep: 0, // TODO: find a good configuration here
             edgeSep: 10,
-            nodeSep: 0
-        });
+            nodeSep: 0,
+            marginX: marginX,
+            marginY: marginY
+        };
+
+        // Draw twice: first one will just allow us to get the relative position
+        // for the startNode. With such values, we can correctly calculate margins
+        joint.layout.DirectedGraph.layout(this.graph, opts);
+
+        let position = this.startNode.get('position');
+        let size = this.startNode.get('size');
+
+        // marginX is exactly the middle and marginX is just 2% paper size
+        // Scale should be considered, as values keep the same value and there is a "movement" impression.
+        opts['marginX'] = ((this.paperWidth / 2) - this.scale * (parseInt(position['x']) + (parseInt(size['width']) / 2))) / this.scale;
+        opts['marginY'] = (this.paperHeight / 50) - parseInt(position['y']);
+
+        joint.layout.DirectedGraph.layout(this.graph, opts);
     }
 
     createRect(code: string): joint.shapes.basic.Rect {
@@ -95,7 +130,38 @@ export class TraceGraph {
             })
         })
 
+        // Save starting node
+        this.startNode = graphElements[0];
+
         this.graph.addCells(graphElements);
         this.updateLayout();
+    }
+
+    zoomIn(): void {
+        this.scale += 0.1;
+        this.paper.scale(this.scale, this.scale);
+        this.updateLayout();
+    }
+
+    zoomOut(): void {
+        if (this.scale > 0.1) {
+            this.scale -= 0.1;
+            this.paper.scale(this.scale, this.scale);
+            this.updateLayout();
+        }
+    }
+
+    expandPaper(): void {
+        this.paperWidth += 100;
+        this.paperHeight += (100 * this.paperHeight / this.paperWidth);
+        this.paper.setDimensions(this.paperWidth, this.paperHeight);
+    }
+
+    compressPaper(): void {
+        if (this.paperWidth > 100) {
+            this.paperWidth -= 100;
+            this.paperHeight -= (100 * this.paperHeight / this.paperWidth);
+        }
+        this.paper.setDimensions(this.paperWidth, this.paperHeight);
     }
 }

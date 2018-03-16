@@ -10,17 +10,20 @@
         margin-bottom: 16px;
     }
 
-    .card .card-nav  { 
+    .card .card-nav  {
         font-size: 0.8rem;
         padding-top: 8px;
     }
 
     #paper {
-        background: #00000008; 
-        border: 1px solid #00000020;
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0,0,0,0.08);
         border-radius: 0.4rem;
+        min-height: 500px;
     }
-
-    .joint-paper > svg {
-        top: 50px;
+    
+    #graph {
+        height: 100%;
+        overflow: scroll;
+        width: 100%;
     }
