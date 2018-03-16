@@ -1,14 +1,14 @@
 // Model definitions - later transformed in a jointjs graph
 
 // Actual node, know its connections
-interface TraceNode {
+export interface TraceNode {
     code: string,
     destinations: number[]
     origins?: number[]
 }
 
 // Represent a graph change, used both for increments and modifications
-interface TraceGraphChange {
+export interface TraceGraphChange {
     raw: TraceNode,
     index: number,
 }
@@ -22,8 +22,9 @@ export enum TraceModificationType {
 }
 
 // Finally, the "self-modification" part
-interface TraceModification {
+export interface TraceModification {
     type: TraceModificationType,
+    causers?: number[],
     targets: number[],
 
     change?: TraceGraphChange[],
@@ -36,6 +37,7 @@ export class Trace {
     modifications: TraceModification[];
 
     private traceGraphChanges: TraceGraphChange[];  // Used by the builder
+    peekNodes: Map<number, TraceNode>;              // Small view of the next modification
 
     constructor() {
         this.counter = 0;
@@ -48,12 +50,20 @@ export class Trace {
     }
 
     appendNode(index: number, code: string, destinations: number[]): Trace {
-        let tn = {
-            code: code,
-            destinations: destinations,
-        }
+        const tn = this.createNode(code, destinations, null);
         this.nodes.set(index, tn);
         return this;
+    }
+
+    private createNode(code: string, destinations: number[], origins: number[]): TraceNode {
+        let tn = {
+            code: code,
+            destinations: destinations
+        }
+        if (origins != null) {
+            tn["origins"] = origins;
+        }
+        return tn;
     }
 
     createTraceModificationNode(index: number, code: string, destinations: number[], origins: number[]): Trace {
@@ -69,9 +79,10 @@ export class Trace {
         return this;
     }
 
-    appendTraceModification(type: TraceModificationType, targets: number[]): Trace {
+    appendTraceModification(type: TraceModificationType, causers: number[], targets: number[]): Trace {
         let modification = {
             type: type,
+            causers: causers,
             targets: targets,
             change: null
         }
@@ -110,14 +121,23 @@ export class Trace {
         return false;
     }
 
-    applyNext(): boolean {
-        // No more modifications allowed
+    private getLatestModification(): TraceModification {
         if (this.counter >= this.modifications.length) {
+            return null;
+        }
+        return this.modifications[this.counter];
+    }
+
+    applyNext(): boolean {
+        const latest = this.getLatestModification();
+
+        // No more modifications allowed
+        if (latest == null) {
             return false;
         }
 
         this.counter++;
-        return this.apply(this.modifications[this.counter - 1]);
+        return this.apply(latest);
     }
 
     apply(traceModification: TraceModification): boolean {
@@ -154,6 +174,37 @@ export class Trace {
         return true;
     }
 
+    createPeek(): void {
+        this.peekNodes = new Map<number, TraceNode>();
+        const traceModification = this.getLatestModification();
+
+        if (traceModification == null) {
+            return;
+        }
+
+        switch (traceModification.type) {
+            case TraceModificationType.modify: {
+                this.peekModify(traceModification);
+                break;
+            }
+            case TraceModificationType.add: {
+                break;
+            }
+            case TraceModificationType.remove: {
+                break;
+            }
+            case TraceModificationType.join: {
+                break;
+            }
+            case TraceModificationType.split: {
+                break;
+            }
+            default: {
+                console.log('Error, unknown type for traceModification: ' + traceModification);
+            }
+        }
+    }
+
     private applyModify(traceModification: TraceModification): void {
         if (!this.hasSameLength(traceModification.targets, traceModification.change)) return;
         traceModification.targets.forEach((t, i) => {
@@ -175,6 +226,21 @@ export class Trace {
                 let dst = JSON.parse(JSON.stringify(changeNode.destinations));
                 this.nodes.get(t).destinations = dst;
             }
+        });
+    }
+
+    private peekModify(traceModification: TraceModification): void {
+        this.peekNodes.set(0, this.createNode("Modify", traceModification.targets.slice(), null));
+
+        traceModification.targets.forEach((t, i) => {
+            // Add both original and modified
+            const node = this.nodes.get(t);
+
+            const original = this.createNode(node.code, [-t], null);
+            const changed = this.createNode(traceModification.change[i].raw.code, [], null);
+
+            this.peekNodes.set(t, original);
+            this.peekNodes.set(-t, changed);
         });
     }
 
@@ -211,7 +277,7 @@ export class Trace {
             });
             this.nodes.delete(t);
 
-            // TODO: Check for orphans
+            // TODO: Check for orphans?
         });
     }
 
@@ -255,7 +321,7 @@ export class Trace {
         // Remove node1
         this.applyRemove({ type: TraceModificationType.remove, targets: [t1] });
 
-        // TODO: Check for orphans
+        // TODO: Check for orphans?
     }
 
     private applySplit(traceModification: TraceModification): void {

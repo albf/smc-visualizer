@@ -2,7 +2,7 @@ import * as jQuery from 'jquery';
 import * as _ from 'lodash';
 import * as $ from 'backbone';
 import * as joint from 'jointjs';
-import { Trace } from './trace';
+import { Trace, TraceNode } from './trace';
 
 // Actual graph display and helper functions
 
@@ -79,7 +79,7 @@ export class TraceGraph {
         return metrics.width;
     };
 
-    private createRect(code: string): joint.shapes.basic.Rect {
+    private createRect(code: string, color = 'white'): joint.shapes.basic.Rect {
         const lines = code.split(/\r\n|\r|\n/);
         const fontSize = 14;
         const fontFamily = "sans-serif";
@@ -95,7 +95,7 @@ export class TraceGraph {
 
         return new joint.shapes.basic.Rect({
             size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
-            attrs: { rect: { fill: 'white' }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
+            attrs: { rect: { fill: color }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
         });
     }
 
@@ -121,19 +121,19 @@ export class TraceGraph {
         });
     }
 
-    draw(trace: Trace): void {
+    private draw(nodes: Map<number, TraceNode>, nodeColors = {}, linkColors = {}): void {
         const graphElements = [];
         const nodesMap = new Map<number, joint.shapes.basic.Rect>();  // Needed to created links
 
         // Frist create nodes
-        trace.nodes.forEach((n, k) => {
+        nodes.forEach((n, k) => {
             const rect = this.createRect(n.code);
             graphElements.push(rect);
             nodesMap.set(k, rect);
         });
 
         // Then, create edges - mandatory to do be after nodes
-        trace.nodes.forEach((n, sourceIndex) => {
+        nodes.forEach((n, sourceIndex) => {
             n.destinations.forEach((targetIndex) => {
                 graphElements.push(this.createLink(nodesMap.get(sourceIndex).id, nodesMap.get(targetIndex).id));
             })
@@ -146,6 +146,15 @@ export class TraceGraph {
         this.graph.clear();
         this.graph.addCells(graphElements);
         this.updateLayout();
+    }
+
+    drawTrace(trace: Trace) {
+        this.draw(trace.nodes);
+    }
+
+    drawPeek(trace: Trace): void {
+        trace.createPeek();
+        this.draw(trace.peekNodes);
     }
 
     zoomIn(): void {
