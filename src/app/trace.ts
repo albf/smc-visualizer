@@ -188,9 +188,11 @@ export class Trace {
                 break;
             }
             case TraceModificationType.add: {
+                this.peekAdd(traceModification);
                 break;
             }
             case TraceModificationType.remove: {
+                this.peekRemove(traceModification);
                 break;
             }
             case TraceModificationType.join: {
@@ -263,6 +265,22 @@ export class Trace {
         });
     }
 
+    private peekAdd(traceModification: TraceModification): void {
+        let dst = [];
+        traceModification.change.forEach((v) => { dst.push(v.index) });
+
+        this.peekNodes.set(0, this.createNode("Add", dst, null));
+
+        traceModification.change.forEach((v) => {
+            // Add both original and modified
+            const node = this.nodes.get(v.index);
+
+            const added = this.createNode(v.raw.code, [], null);
+
+            this.peekNodes.set(v.index, added);
+        });
+    }
+
     private applyRemove(traceModification: TraceModification): void {
         traceModification.targets.forEach((t, i) => {
             if (!this.hasNode(t, true)) {
@@ -278,6 +296,15 @@ export class Trace {
             this.nodes.delete(t);
 
             // TODO: Check for orphans?
+        });
+    }
+
+    private peekRemove(traceModification: TraceModification): void {
+        this.peekNodes.set(0, this.createNode("Remove", traceModification.targets.slice(), null));
+
+        traceModification.targets.forEach((t, i) => {
+            const removed = this.createNode(this.nodes.get(t).code, [], null);
+            this.peekNodes.set(t, removed);
         });
     }
 
