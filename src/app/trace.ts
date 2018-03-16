@@ -394,7 +394,7 @@ export class Trace {
     }
 
     private applySplit(traceModification: TraceModification): void {
-        if (this.isSplitValid(traceModification)) {
+        if (!this.isSplitValid(traceModification)) {
             return;
         }
 
@@ -402,7 +402,7 @@ export class Trace {
         let change = traceModification.change;
 
         if (this.hasNode(change[0].index, false) || this.hasNode(change[1].index, false)) {
-            console.log("Error: split new nods should be new values");
+            console.log("Error: split new nodes should be new values");
         }
 
         // Remove t0
