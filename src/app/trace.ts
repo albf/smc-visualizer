@@ -253,6 +253,7 @@ export class Trace {
                 break;
             }
             case TraceModificationType.split: {
+                this.createSplitUndo(traceModification);
                 break;
             }
             default: {
@@ -423,11 +424,6 @@ export class Trace {
 
             console.log("Error: join requires exactly one new code");
             return false;
-        } else if ((traceModification.change[0].raw.origins != null) &&
-            (traceModification.change[0].raw.origins.length != 0)) {
-
-            console.log("Error: join don't accept origin change");
-            return false;
         }
 
         return true;
@@ -446,21 +442,29 @@ export class Trace {
         const node0 = this.nodes.get(t0);
         const node1 = this.nodes.get(t1);
         const origins = [];
+        const isOriginsEmpty = traceModification.change[0].raw.origins == null
+            || traceModification.change[0].raw.origins.length == 0;
 
-        // Add origins from previous nodes
-        node0.origins.concat(node1.origins).forEach((r) => {
-            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
-                origins.push(r);
-            }
-        })
+        if (isOriginsEmpty) {
+            // Add origins from previous nodes
+            node0.origins.concat(node1.origins).forEach((r) => {
+                if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                    origins.push(r);
+                }
+            })
+        }
 
         // Remove node1 and node2
         this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
         // Adds the new node. Add requires origins to be set
-        traceModification.change[0].raw.origins = origins;
+        if (isOriginsEmpty) {
+            traceModification.change[0].raw.origins = origins;
+        }
         this.applyAdd(traceModification);
-        traceModification.change[0].raw.origins = null;;
+        if (isOriginsEmpty) {
+            traceModification.change[0].raw.origins = null;;
+        }
 
         // TODO: Check for orphans?
     }
@@ -555,4 +559,20 @@ export class Trace {
         this.peekNodes.set(3, this.createNode(change[1].raw.code, [], null));
     }
 
+    private createSplitUndo(traceModification: TraceModification): void {
+        const c0 = traceModification.change[0].index;
+        const c1 = traceModification.change[1].index;
+        const target = traceModification.targets[0];
+
+        let change: TraceGraphChange = {
+            index: target,
+            raw: JSON.parse(JSON.stringify(this.nodes.get(target)))
+        }
+
+        this.undoModifications.push({
+            type: TraceModificationType.join,
+            targets: [c0, c1],
+            change: [change]
+        })
+    }
 }
