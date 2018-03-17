@@ -2,26 +2,9 @@ import * as jQuery from 'jquery';
 import * as _ from 'lodash';
 import * as $ from 'backbone';
 import * as joint from 'jointjs';
+import { Trace, TraceNode } from './trace';
 
-// Model definitions - later transformed in a jointjs graph
-
-interface TraceNode {
-    code: string,
-    destinations: number[]
-}
-
-interface TraceChange {
-    type: 'modify' | 'remove' | 'add',
-    target: number
-    result: TraceNode
-}
-
-interface Trace {
-    nodes: TraceNode[];
-    changes: TraceChange[];
-}
-
-// Actual graph and helper functions
+// Actual graph display and helper functions
 
 export class TraceGraph {
     graph: joint.dia.Graph;
@@ -31,6 +14,7 @@ export class TraceGraph {
     paperHeight: number;
     scale = 1;
 
+    textCanvas: any;
     startNode: joint.shapes.basic.Rect;
 
     constructor() {
@@ -49,7 +33,7 @@ export class TraceGraph {
         });
     }
 
-    updateLayout(): void {
+    private updateLayout(): void {
         let marginX = 0;
         let marginY = 0;
 
@@ -85,15 +69,37 @@ export class TraceGraph {
         joint.layout.DirectedGraph.layout(this.graph, opts);
     }
 
-    createRect(code: string): joint.shapes.basic.Rect {
+    // Use canvas meaureText to calculate text width. Shouldn't mess with the DOM.
+    private getTextWidth(text, font) {
+        // if exists, use cached canvas for better performance
+        var canvas = this.textCanvas || (this.textCanvas = document.createElement("canvas"));
+        var context = canvas.getContext("2d");
+        context.font = font;
+        var metrics = context.measureText(text);
+        return metrics.width;
+    };
+
+    private createRect(code: string, color = 'white'): joint.shapes.basic.Rect {
+        const lines = code.split(/\r\n|\r|\n/);
+        const fontSize = 14;
+        const fontFamily = "sans-serif";
+        const borderSize = 10;
+        let maxWidth = 0;
+
+        lines.forEach((value) => {
+            let width = this.getTextWidth(value, String(fontSize + "px " + String(fontFamily)));
+            if (width > maxWidth) {
+                maxWidth = width;
+            }
+        });
+
         return new joint.shapes.basic.Rect({
-            position: { x: 100, y: 30 },
-            size: { width: 100, height: 30 }, // TODO: find how to resize based on text
-            attrs: { rect: { fill: 'white' }, text: { text: code, fill: 'gray' } }
+            size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
+            attrs: { rect: { fill: color }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
         });
     }
 
-    createLink(sourceId: string | number, targetId: string | number): joint.dia.Link {
+    private createLink(sourceId: string | number, targetId: string | number): joint.dia.Link {
         let attrs = {
             '.connection': {
                 stroke: 'gray',
@@ -115,26 +121,40 @@ export class TraceGraph {
         });
     }
 
-    draw(trace: Trace): void {
-        let graphElements = [];
+    private draw(nodes: Map<number, TraceNode>, nodeColors = {}, linkColors = {}): void {
+        const graphElements = [];
+        const nodesMap = new Map<number, joint.shapes.basic.Rect>();  // Needed to created links
 
         // Frist create nodes
-        for (let n of trace.nodes) {
-            graphElements.push(this.createRect(n.code));
-        }
+        nodes.forEach((n, k) => {
+            const rect = this.createRect(n.code);
+            graphElements.push(rect);
+            nodesMap.set(k, rect);
+        });
 
         // Then, create edges - mandatory to do be after nodes
-        trace.nodes.forEach((n, sourceIndex) => {
+        nodes.forEach((n, sourceIndex) => {
             n.destinations.forEach((targetIndex) => {
-                graphElements.push(this.createLink(graphElements[sourceIndex].id, graphElements[targetIndex].id));
+                graphElements.push(this.createLink(nodesMap.get(sourceIndex).id, nodesMap.get(targetIndex).id));
             })
         })
 
         // Save starting node
         this.startNode = graphElements[0];
 
+        // TODO: Might be optmized by only changing the modified nodes
+        this.graph.clear();
         this.graph.addCells(graphElements);
         this.updateLayout();
+    }
+
+    drawTrace(trace: Trace) {
+        this.draw(trace.nodes);
+    }
+
+    drawPeek(trace: Trace): void {
+        trace.createPeek();
+        this.draw(trace.peekNodes);
     }
 
     zoomIn(): void {
@@ -152,16 +172,14 @@ export class TraceGraph {
     }
 
     expandPaper(): void {
-        this.paperWidth += 100;
-        this.paperHeight += (100 * this.paperHeight / this.paperWidth);
+        this.paperHeight += 100;
         this.paper.setDimensions(this.paperWidth, this.paperHeight);
     }
 
     compressPaper(): void {
-        if (this.paperWidth > 100) {
-            this.paperWidth -= 100;
-            this.paperHeight -= (100 * this.paperHeight / this.paperWidth);
+        if (this.paperHeight > 100) {
+            this.paperHeight -= 100;
+            this.paper.setDimensions(this.paperWidth, this.paperHeight);
         }
-        this.paper.setDimensions(this.paperWidth, this.paperHeight);
     }
 }

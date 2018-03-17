@@ -32,12 +32,17 @@
                         <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
                             <i class="fa fa-play" aria-hidden="true"></i>
                         </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Peek Modification" type="button" class="btn btn-outline-primary"
+                            (click)="peekView();">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        </button>
                     </div>
+                    <div class="card-nav">1 of 1000</div>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-header">Graph canvas options</div>
+                <div class="card-header">Canvas Options</div>
                 <div class="card-body text-center">
                     <div class="btn-group" role="group" aria-label="...">
                         <button data-toggle="tooltip" data-placement="bottom" title="Zoom In" type="button" class="btn btn-outline-primary" (click)="zoomIn();">
@@ -53,7 +58,6 @@
                             <i class="fa fa-compress" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <div class="card-nav">1 of 1000</div>
                 </div>
             </div>
 
