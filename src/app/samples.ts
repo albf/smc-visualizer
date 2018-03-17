@@ -32,16 +32,16 @@ export class TraceSamples {
                 .appendNode(7, "h", [8])
                 .appendNode(8, "i", [9])
                 .appendNode(9, "j", [])
-                .appendTraceModification(TraceModificationType.remove, [], [9])
+                .appendTraceModification(TraceModificationType.remove, [3], [9])
 
                 .createTraceModificationNode(15, "new code", [3, 4], [0, 1])
                 .appendTraceModification(TraceModificationType.add, [], [0])
 
                 .createTraceModificationNode(2, "changed code", [3, 4], [])
-                .appendTraceModification(TraceModificationType.modify, [], [2])
+                .appendTraceModification(TraceModificationType.modify, [5], [2])
 
                 .createTraceModificationNode(10, "joined code", [8], [])
-                .appendTraceModification(TraceModificationType.join, [], [6, 7])
+                .appendTraceModification(TraceModificationType.join, [3, 3], [6, 7])
 
                 .createTraceModificationNode(11, "f-1", [10], [0])
                 .createTraceModificationNode(12, "f-2", [10], [0])

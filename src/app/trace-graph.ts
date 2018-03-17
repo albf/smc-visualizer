@@ -4,6 +4,11 @@ import * as $ from 'backbone';
 import * as joint from 'jointjs';
 import { Trace, TraceNode } from './trace';
 
+interface SpecialEdges {
+    start: number[],
+    end: number[]
+}
+
 // Actual graph display and helper functions
 
 export class TraceGraph {
@@ -99,20 +104,24 @@ export class TraceGraph {
         });
     }
 
-    private createLink(sourceId: string | number, targetId: string | number): joint.dia.Link {
+    private createLink(sourceId: string | number, targetId: string | number, color: string = 'gray', dashed: boolean = false): joint.dia.Link {
         let attrs = {
             '.connection': {
-                stroke: 'gray',
+                stroke: color,
                 strokeWidth: 2,
                 pointerEvents: 'none',
                 targetMarker: {
                     type: 'path',
-                    fill: 'gray',
+                    fill: color,
                     stroke: 'none',
                     d: 'M 10 -10 0 0 10 10 z'
                 }
             }
         };
+
+        if (dashed) {
+            attrs['.connection']['stroke-dasharray'] = '5 2';
+        }
 
         return new joint.dia.Link({
             attrs,
@@ -121,7 +130,7 @@ export class TraceGraph {
         });
     }
 
-    private draw(nodes: Map<number, TraceNode>, nodeColors = {}, linkColors = {}): void {
+    private draw(nodes: Map<number, TraceNode>, specialEdges: SpecialEdges = null): void {
         const graphElements = [];
         const nodesMap = new Map<number, joint.shapes.basic.Rect>();  // Needed to created links
 
@@ -139,6 +148,15 @@ export class TraceGraph {
             })
         })
 
+        // Create change edges
+        if (specialEdges != null) {
+            specialEdges.start.forEach((v, i) => {
+                const startNode = nodesMap.get(specialEdges.start[i]);
+                const endNode = nodesMap.get(specialEdges.end[i]);
+                graphElements.push(this.createLink(startNode.id, endNode.id, 'red', true));
+            });
+        }
+
         // Save starting node
         this.startNode = graphElements[0];
 
@@ -149,7 +167,16 @@ export class TraceGraph {
     }
 
     drawTrace(trace: Trace) {
-        this.draw(trace.nodes);
+        let specialEdges = null;
+        const latestModification = trace.getLatestModification();
+        if (latestModification != null) {
+            specialEdges = {
+                start: latestModification.causers,
+                end: latestModification.targets
+            }
+        }
+
+        this.draw(trace.nodes, specialEdges);
     }
 
     drawPeek(trace: Trace): void {

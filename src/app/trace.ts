@@ -123,7 +123,7 @@ export class Trace {
         return false;
     }
 
-    private getLatestModification(): TraceModification {
+    getLatestModification(): TraceModification {
         if (this.counter >= this.modifications.length) {
             return null;
         }
