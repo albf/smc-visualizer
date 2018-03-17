@@ -152,7 +152,6 @@ export class Trace {
         }
 
         const previous = this.undoModifications[this.counter - 1];
-        console.log(previous);
         if (previous == undefined) {
             console.log("Error: previous undo modification is null");
             return false;
@@ -250,6 +249,7 @@ export class Trace {
                 break;
             }
             case TraceModificationType.join: {
+                this.createJoinUndo(traceModification);
                 break;
             }
             case TraceModificationType.split: {
@@ -321,7 +321,6 @@ export class Trace {
     }
 
     private applyAdd(traceModification: TraceModification): void {
-        if (!this.hasSameLength(traceModification.targets, traceModification.change)) return;
         traceModification.change.forEach((change, i) => {
             if (traceModification.change[i].index == null) {
                 console.log("Expected new node index");
@@ -332,7 +331,7 @@ export class Trace {
             this.nodes.get(change.index).destinations.filter((d) => !this.hasNode(d, null));
 
             change.raw.origins.forEach((d) => {
-                if (this.hasNode(d, true)) {
+                if (this.hasNode(d, true) && this.nodes.get(d).destinations.indexOf(change.index) < 0) {
                     this.nodes.get(d).destinations.push(change.index);
                 }
             });
@@ -419,10 +418,10 @@ export class Trace {
         if (traceModification.targets.length != 2) {
             console.log("Error: join should have exactly two targets");
             return false;
-        } else if ((traceModification.change.length == 0) ||
+        } else if ((traceModification.change.length != 1) ||
             (traceModification.change[0].raw.code == null)) {
 
-            console.log("Error: join requires new code");
+            console.log("Error: join requires exactly one new code");
             return false;
         } else if ((traceModification.change[0].raw.origins != null) &&
             (traceModification.change[0].raw.origins.length != 0)) {
@@ -439,29 +438,29 @@ export class Trace {
             return;
         }
 
-        let t0 = traceModification.targets[0];
-        let t1 = traceModification.targets[1];
+        const t0 = traceModification.targets[0];
+        const t1 = traceModification.targets[1];
 
         if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
 
-        let node0 = this.nodes.get(t0);
-        let node1 = this.nodes.get(t1);
+        const node0 = this.nodes.get(t0);
+        const node1 = this.nodes.get(t1);
+        const origins = [];
 
-        // Move node1 origins to node0
-        node1.origins.forEach((r) => {
-            // Check if wasn't already a origin or adding to itself
-            if (this.nodes.get(r).destinations.indexOf(t0) < 0 && t0 != r) {
-                this.nodes.get(r).destinations.push(t0)
-                node0.origins.push(r);
+        // Add origins from previous nodes
+        node0.origins.concat(node1.origins).forEach((r) => {
+            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                origins.push(r);
             }
-        });
+        })
 
-        // Set destinations and code
-        node0.destinations = traceModification.change[0].raw.destinations.slice();
-        node0.code = traceModification.change[0].raw.code;
+        // Remove node1 and node2
+        this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
-        // Remove node1
-        this.applyRemove({ type: TraceModificationType.remove, targets: [t1] });
+        // Adds the new node. Add requires origins to be set
+        traceModification.change[0].raw.origins = origins;
+        this.applyAdd(traceModification);
+        traceModification.change[0].raw.origins = null;;
 
         // TODO: Check for orphans?
     }
@@ -485,6 +484,26 @@ export class Trace {
         this.peekNodes.set(2, this.createNode(node1.code, [3], null));
 
         this.peekNodes.set(3, this.createNode(traceModification.change[0].raw.code, [], null));
+    }
+
+    private createJoinUndo(traceModification: TraceModification): void {
+        let t0 = traceModification.targets[0];
+        let change0: TraceGraphChange = {
+            index: t0,
+            raw: JSON.parse(JSON.stringify(this.nodes.get(t0)))
+        }
+
+        let t1 = traceModification.targets[1];
+        let change1: TraceGraphChange = {
+            index: t1,
+            raw: JSON.parse(JSON.stringify(this.nodes.get(t1)))
+        }
+
+        this.undoModifications.push({
+            type: TraceModificationType.split,
+            targets: [traceModification.change[0].index],
+            change: [change0, change1]
+        })
     }
 
     private isSplitValid(traceModification: TraceModification): boolean {
