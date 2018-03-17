@@ -26,7 +26,7 @@ export class AppComponent {
             .appendNode(5, "f", [6])
             .appendNode(6, "g", [7])
             .appendNode(7, "h", [])
-            //.appendTraceModification(TraceModificationType.remove, [], [5])
+            .appendTraceModification(TraceModificationType.remove, [], [6])
 
             //.createTraceModificationNode(15, "new code", [3, 4], [0, 1])
             //.appendTraceModification(TraceModificationType.add, [], [0])
@@ -37,9 +37,9 @@ export class AppComponent {
             //.createTraceModificationNode(10, "joined code", [7], [])
             //.appendTraceModification(TraceModificationType.join, [], [5, 6])
 
-            .createTraceModificationNode(11, "g-1", [7], [5])
-            .createTraceModificationNode(12, "g-2", [7], [5])
-            .appendTraceModification(TraceModificationType.split, [0], [6])
+            //.createTraceModificationNode(11, "g-1", [7], [5])
+            //.createTraceModificationNode(12, "g-2", [7], [5])
+            //.appendTraceModification(TraceModificationType.split, [0], [6])
 
             .assignInverse()
 
@@ -58,6 +58,12 @@ export class AppComponent {
 
     advanceTime() {
         if (this.trace.applyNext()) {
+            this.graph.drawTrace(this.trace);
+        }
+    }
+
+    backTime() {
+        if (this.trace.applyUndo()) {
             this.graph.drawTrace(this.trace);
         }
     }
