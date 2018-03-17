@@ -48,7 +48,6 @@ export class Trace {
 
         this.traceGraphChanges = [];
         this.undoModifications = [];
-        this.assignInverse();
     }
 
     appendNode(index: number, code: string, destinations: number[]): Trace {
@@ -96,7 +95,8 @@ export class Trace {
         return this;
     }
 
-    assignInverse(): Trace {
+    build(): Trace {
+        // Assign inverses
         this.nodes.forEach((value, key) => { this.nodes.get(key).origins = []; });
         this.nodes.forEach((value, origin) => {
             value.destinations.forEach(destination => {

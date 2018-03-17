@@ -41,7 +41,7 @@ export class TraceGraph {
         let ranker: 'network-simplex' | 'tight-tree' | 'longest-path';
 
         rankDir = 'TB';
-        ranker = 'longest-path';
+        ranker = 'network-simplex';
 
         let opts = {
             setVertices: true,
