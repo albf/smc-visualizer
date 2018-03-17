@@ -332,10 +332,23 @@ export class Trace {
             this.nodes.get(change.index).destinations.filter((d) => !this.hasNode(d, null));
 
             change.raw.origins.forEach((d) => {
-                if (this.hasNode(d, true) && this.nodes.get(d).destinations.indexOf(change.index) < 0) {
+                if (!this.hasNode(d, true)) {
+                    console.log("Missing origin node: " + d);
+                    return;
+                }
+                if (this.nodes.get(d).destinations.indexOf(change.index) < 0) {
                     this.nodes.get(d).destinations.push(change.index);
                 }
             });
+            change.raw.destinations.forEach((d) => {
+                if (!this.hasNode(d, true)) {
+                    console.log("Missing destination node: " + d);
+                    return;
+                }
+                if (this.nodes.get(d).origins.indexOf(change.index) < 0) {
+                    this.nodes.get(d).origins.push(change.index);
+                }
+            })
         });
     }
 
