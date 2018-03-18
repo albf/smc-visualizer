@@ -3,14 +3,14 @@
     <!-- First panel [ ... [] [] []] -->
     <div class="row">
         <div class="col-xl-12 text-right top-bar">
-            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile();">
+            <button data-toggle="tooltip" data-placement="bottom" title="Samples" type="button" class="btn btn-danger" (click)="showSamplesModal(content);">
+                <i class="fa fa-file" aria-hidden="true"></i> Samples</button>
+            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile(content);">
                 <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Export to SVG" type="button" class="btn btn-primary" (click)="rasterizeSVG();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to SVG</button>
-            <button data-toggle="tooltip" data-placement="bottom" title="Clear" type="button" class="btn btn-danger" (click)="confirmClear();">
-                <i class="fa fa-ban" aria-hidden="true"></i> Clear</button>
         </div>
     </div>
     <hr>
@@ -19,6 +19,7 @@
     <div class="row">
         <div class="col-3">
             <div class="card">
+
                 <div class="card-header">Navigation controls</div>
                 <div class="card-body text-center">
                     <div class="btn-group" role="group" aria-label="...">
@@ -32,12 +33,35 @@
                         <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
                             <i class="fa fa-play" aria-hidden="true"></i>
                         </button>
-                        <button data-toggle="tooltip" data-placement="bottom" title="Peek Modification" type="button" class="btn btn-outline-primary"
-                            (click)="peekView();">
-                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Back to Start" type="button" class="btn btn-outline-primary"
+                            (click)="backToStart();">
+                            <i class="fa fa-fast-backward" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Advance to End" type="button" class="btn btn-outline-primary"
+                            (click)="advanceToEnd();">
+                            <i class="fa fa-fast-forward" aria-hidden="true"></i>
                         </button>
                     </div>
                     <div class="card-nav">{{currentTime | number}} of {{maxTime | number}}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">View Options</div>
+                <div class="card-body text-center">
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Normal View" type="button" class="btn btn-outline-primary" (click)="normalView();">
+                            <i class="fa fa-connectdevelop" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Peek Modification" type="button" class="btn btn-outline-primary"
+                            (click)="peekModificationView();">
+                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Peek Increment" type="button" class="btn btn-outline-primary"
+                            (click)="peekIncrementView();">
+                            <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -69,3 +93,24 @@
         </div>
 
     </div>
+
+    <!-- Modal -->
+    <ng-template #content let-c="close" let-d="dismiss">
+        <div class="modal-header">
+            <h4 class="modal-title">Samples</h4>
+            <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <ul class="modal-samples-list">
+                <li *ngFor="let summarizedSample of summarizedSamples">
+                    <a href="#">
+                        <strong>{{ summarizedSample.name }}</strong>
+                        {{ summarizedSample.description }}
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </ng-template>
+</div>

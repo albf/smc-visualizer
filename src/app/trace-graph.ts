@@ -179,9 +179,14 @@ export class TraceGraph {
         this.draw(trace.nodes, specialEdges);
     }
 
-    drawPeek(trace: Trace): void {
-        trace.createPeek();
-        this.draw(trace.peekNodes);
+    drawModificationPeek(trace: Trace): void {
+        trace.createModificationPeek();
+        this.draw(trace.peekModificationNodes);
+    }
+
+    drawIncrementPeek(trace: Trace): void {
+        trace.createIncrementPeek();
+        this.draw(trace.peekIncrementNodes);
     }
 
     zoomIn(): void {
