@@ -17,6 +17,10 @@ export class TraceSamples {
         return this.samples[index];
     }
 
+    getSamples(): traceSample[] {
+        return this.samples;
+    }
+
     private sample1() {
         this.samples.push({
             name: "Simple graph",

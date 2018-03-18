@@ -100,18 +100,12 @@
             </button>
         </div>
         <div class="modal-body">
-            <ul>
-                <li>
-                    <a href="#">Sample 1</a>
-                </li>
-                <li>
-                    <a href="#">Sample 2</a>
-                </li>
-                <li>
-                    <a href="#">Sample 3</a>
-                </li>
-                <li>
-                    <a href="#">Sample 4</a>
+            <ul class="modal-samples-list">
+                <li *ngFor="let summarizedSample of summarizedSamples">
+                    <a href="#">
+                        <strong>{{ summarizedSample.name }}</strong>
+                        {{ summarizedSample.description }}
+                    </a>
                 </li>
             </ul>
         </div>
