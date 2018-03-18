@@ -32,9 +32,8 @@ export class AppComponent {
     ngOnInit() {
         this.graph = new TraceGraph();
         this.traceSamples = new TraceSamples();
-        this.summarizedSample = new SummarizedSample(this.traceSamples.getSamples());
+        this.summarizedSample = new SummarizedSample(this.traceSamples.samples);
         this.summarizedSamples = this.summarizedSample.getSummarizedSamples();
-        console.log('foo', this.summarizedSamples);
         this.drawSample(0);
     }
 
@@ -97,7 +96,7 @@ export class AppComponent {
         this.graph.compressPaper();
     }
 
-    loadTraceFile(content) {
+    showSamplesModal(content) {
         this.modalService.open(content);
     }
 }

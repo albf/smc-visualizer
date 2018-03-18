@@ -1,3 +1,5 @@
+import { TraceSample } from "./samples"
+
 interface summarizedSample {
     name: string,
     description: string
@@ -5,9 +7,9 @@ interface summarizedSample {
 
 export class SummarizedSample {
     private summarizedSamples: summarizedSample[] = [];
-    private samples = [];
+    private samples: TraceSample[] = [];
 
-    constructor(private traceSamples: any) {
+    constructor(traceSamples: TraceSample[]) {
         this.samples = traceSamples;
     }
 

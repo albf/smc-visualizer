@@ -3,14 +3,14 @@
     <!-- First panel [ ... [] [] []] -->
     <div class="row">
         <div class="col-xl-12 text-right top-bar">
+            <button data-toggle="tooltip" data-placement="bottom" title="Samples" type="button" class="btn btn-danger" (click)="showSamplesModal(content);">
+                <i class="fa fa-file" aria-hidden="true"></i> Samples</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile(content);">
                 <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Export to SVG" type="button" class="btn btn-primary" (click)="rasterizeSVG();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to SVG</button>
-            <button data-toggle="tooltip" data-placement="bottom" title="Clear" type="button" class="btn btn-danger" (click)="confirmClear();">
-                <i class="fa fa-ban" aria-hidden="true"></i> Clear</button>
         </div>
     </div>
     <hr>
@@ -94,7 +94,7 @@
     <!-- Modal -->
     <ng-template #content let-c="close" let-d="dismiss">
         <div class="modal-header">
-            <h4 class="modal-title">Open trace</h4>
+            <h4 class="modal-title">Samples</h4>
             <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
                 <span aria-hidden="true">&times;</span>
             </button>

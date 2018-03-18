@@ -1,24 +1,20 @@
 import { Trace, TraceModificationType } from "./trace";
 
-interface traceSample {
+export interface TraceSample {
     name: string,
     description: string,
     trace: Trace
 }
 
 export class TraceSamples {
-    private samples: traceSample[] = [];
+    samples: TraceSample[] = [];
 
     constructor() {
         this.sample1();
     }
 
-    getSample(index: number): traceSample {
+    getSample(index: number): TraceSample {
         return this.samples[index];
-    }
-
-    getSamples(): traceSample[] {
-        return this.samples;
     }
 
     private sample1() {
