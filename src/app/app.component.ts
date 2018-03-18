@@ -22,8 +22,8 @@ export class AppComponent {
     private summarizedSample: SummarizedSample;
     private summarizedSamples;
 
-    private currentTime = 0;
-    private maxTime = 0;
+    currentTime = 0;
+    maxTime = 0;
     private viewSelected: "normal" | "modification" | "increment";
 
     constructor(private modalService: NgbModal) {
@@ -106,6 +106,9 @@ export class AppComponent {
         this.drawTrace(this.trace);
     }
 
+    play() {
+    }
+
     zoomIn() {
         this.graph.zoomIn()
     }
@@ -124,5 +127,14 @@ export class AppComponent {
 
     showSamplesModal(content) {
         this.modalService.open(content);
+    }
+
+    rasterize() {
+    }
+
+    rasterizeSVG() {
+    }
+
+    loadTraceFile() {
     }
 }
