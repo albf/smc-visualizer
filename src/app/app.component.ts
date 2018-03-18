@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { TraceGraph } from "./trace-graph";
+import { NgbModal, ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
+
 import { Trace } from "./trace";
 import { TraceSamples } from "./samples";
 
@@ -19,7 +21,7 @@ export class AppComponent {
     private currentTime = 0;
     private maxTime = 0;
 
-    constructor() { }
+    constructor(private modalService: NgbModal) { }
 
     ngOnInit() {
         this.graph = new TraceGraph();
@@ -84,5 +86,9 @@ export class AppComponent {
 
     compressCanvas() {
         this.graph.compressPaper();
+    }
+
+    loadTraceFile(content) {
+        this.modalService.open(content);
     }
 }

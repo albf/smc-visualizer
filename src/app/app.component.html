@@ -3,7 +3,7 @@
     <!-- First panel [ ... [] [] []] -->
     <div class="row">
         <div class="col-xl-12 text-right top-bar">
-            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile();">
+            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile(content);">
                 <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
             <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
@@ -90,3 +90,30 @@
         </div>
 
     </div>
+
+    <!-- Modal -->
+    <ng-template #content let-c="close" let-d="dismiss">
+        <div class="modal-header">
+            <h4 class="modal-title">Open trace</h4>
+            <button type="button" class="close" aria-label="Close" (click)="d('Cross click')">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <ul>
+                <li>
+                    <a href="#">Sample 1</a>
+                </li>
+                <li>
+                    <a href="#">Sample 2</a>
+                </li>
+                <li>
+                    <a href="#">Sample 3</a>
+                </li>
+                <li>
+                    <a href="#">Sample 4</a>
+                </li>
+            </ul>
+        </div>
+    </ng-template>
+</div>
