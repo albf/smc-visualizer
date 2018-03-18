@@ -38,6 +38,10 @@ export class AppComponent {
         this.graph.drawPeek(this.trace);
     }
 
+    peekIncrementView() {
+        this.graph.drawIncrementPeek(this.trace);
+    }
+
     advanceTime() {
         if (this.trace.applyNext()) {
             this.currentTime++;

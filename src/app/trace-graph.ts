@@ -180,8 +180,13 @@ export class TraceGraph {
     }
 
     drawPeek(trace: Trace): void {
-        trace.createPeek();
-        this.draw(trace.peekNodes);
+        trace.createModificationPeek();
+        this.draw(trace.peekModificationNodes);
+    }
+
+    drawIncrementPeek(trace: Trace): void {
+        trace.createIncrementPeek();
+        this.draw(trace.peekIncrementNodes);
     }
 
     zoomIn(): void {

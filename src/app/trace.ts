@@ -30,14 +30,21 @@ export interface TraceModification {
     change?: TraceGraphChange[],
 }
 
+export interface TraceIncrement {
+    additions: TraceGraphChange[];
+}
+
 export class Trace {
     counter: number;
     nodes: Map<number, TraceNode>;                  // The graph, represented using a map
-    increments: TraceModification[];
+    increments: TraceIncrement[];                  // Increments are always a pack of additions
     modifications: TraceModification[];
 
     private traceGraphChanges: TraceGraphChange[];  // Used by the builder
-    peekNodes: Map<number, TraceNode>;              // Small view of the next modification
+    private traceIncrement: TraceIncrement;         // Used by the builder
+
+    peekModificationNodes: Map<number, TraceNode>;  // Small view of the next modification
+    peekIncrementNodes: Map<number, TraceNode>;     // SMall view of the next increment
     undoModifications: TraceModification[];         // Used for undo
 
     constructor() {
@@ -46,8 +53,11 @@ export class Trace {
         this.increments = [];
         this.modifications = [];
 
-        this.traceGraphChanges = [];
+        this.increments = [];
         this.undoModifications = [];
+
+        this.traceGraphChanges = [];
+        this.traceIncrement = { additions: [] };
     }
 
     appendNode(index: number, code: string, destinations: number[]): Trace {
@@ -95,6 +105,27 @@ export class Trace {
         return this;
     }
 
+    createIncrementNode(index: number, code: string, destinations: number[], origins: number[]): Trace {
+        let tn = {
+            code: code,
+            destinations: destinations,
+            origins: origins
+        }
+        this.traceIncrement.additions.push({
+            raw: tn,
+            index: index
+        });
+
+        return this;
+    }
+
+    appendIncrement(): Trace {
+        this.increments.push(this.traceIncrement);
+        this.traceIncrement = { additions: [] };
+
+        return this;
+    }
+
     build(): Trace {
         // Assign inverses
         this.nodes.forEach((value, key) => { this.nodes.get(key).origins = []; });
@@ -131,19 +162,24 @@ export class Trace {
     }
 
     applyNext(): boolean {
-        const latest = this.getLatestModification();
+        const latestModification = this.getLatestModification();
+        const latestIncrement = this.increments[this.counter];
 
         // No more modifications allowed
-        if (latest == null) {
+        if (latestModification == null) {
             return false;
         }
 
-        // Update counter, calculate how to undo the current state and, lastly, apply the change.
+        // Update counter, calculate how to undo the current state.
         this.counter++;
         if (this.counter > this.undoModifications.length) {
-            this.createUndo(latest);
+            this.createUndo(latestModification);
         }
-        return this.apply(latest);
+
+        // Lastly, apply the change and increment.
+        const ret = this.applyModification(latestModification);
+        this.applyIncrement(latestIncrement);
+        return ret;
     }
 
     applyUndo(): boolean {
@@ -151,16 +187,20 @@ export class Trace {
             return false;
         }
 
-        const previous = this.undoModifications[this.counter - 1];
-        if (previous == undefined) {
+        const previousUndo = this.undoModifications[this.counter - 1];
+        const previousIncrement = this.increments[this.counter - 1];
+
+        if (previousUndo == undefined) {
             console.log("Error: previous undo modification is null");
             return false;
         }
         this.counter--;
-        return this.apply(previous);
+
+        this.undoIncrement(previousIncrement);
+        return this.applyModification(previousUndo);
     }
 
-    apply(traceModification: TraceModification): boolean {
+    applyModification(traceModification: TraceModification): boolean {
         if (traceModification == null) {
             console.log("Empty traceModification");
             return false;
@@ -194,8 +234,8 @@ export class Trace {
         return true;
     }
 
-    createPeek(): void {
-        this.peekNodes = new Map<number, TraceNode>();
+    createModificationPeek(): void {
+        this.peekModificationNodes = new Map<number, TraceNode>();
         const traceModification = this.getLatestModification();
 
         if (traceModification == null) {
@@ -287,7 +327,7 @@ export class Trace {
     }
 
     private peekModify(traceModification: TraceModification): void {
-        this.peekNodes.set(0, this.createNode("Modify", traceModification.targets.slice(), null));
+        this.peekModificationNodes.set(0, this.createNode("Modify", traceModification.targets.slice(), null));
 
         traceModification.targets.forEach((t, i) => {
             // Add both original and modified
@@ -296,8 +336,8 @@ export class Trace {
             const original = this.createNode(node.code, [-t], null);
             const changed = this.createNode(traceModification.change[i].raw.code, [], null);
 
-            this.peekNodes.set(t, original);
-            this.peekNodes.set(-t, changed);
+            this.peekModificationNodes.set(t, original);
+            this.peekModificationNodes.set(-t, changed);
         });
     }
 
@@ -356,7 +396,7 @@ export class Trace {
         let dst = [];
         traceModification.change.forEach((v) => { dst.push(v.index) });
 
-        this.peekNodes.set(0, this.createNode("Add", dst, null));
+        this.peekModificationNodes.set(0, this.createNode("Add", dst, null));
 
         traceModification.change.forEach((v) => {
             // Add both original and modified
@@ -364,7 +404,7 @@ export class Trace {
 
             const added = this.createNode(v.raw.code, [], null);
 
-            this.peekNodes.set(v.index, added);
+            this.peekModificationNodes.set(v.index, added);
         });
     }
 
@@ -400,11 +440,11 @@ export class Trace {
     }
 
     private peekRemove(traceModification: TraceModification): void {
-        this.peekNodes.set(0, this.createNode("Remove", traceModification.targets.slice(), null));
+        this.peekModificationNodes.set(0, this.createNode("Remove", traceModification.targets.slice(), null));
 
         traceModification.targets.forEach((t, i) => {
             const removed = this.createNode(this.nodes.get(t).code, [], null);
-            this.peekNodes.set(t, removed);
+            this.peekModificationNodes.set(t, removed);
         });
     }
 
@@ -487,7 +527,7 @@ export class Trace {
             return;
         }
 
-        this.peekNodes.set(0, this.createNode("Join", [1, 2], null));
+        this.peekModificationNodes.set(0, this.createNode("Join", [1, 2], null));
 
         let t0 = traceModification.targets[0];
         let t1 = traceModification.targets[1];
@@ -497,10 +537,10 @@ export class Trace {
         let node0 = this.nodes.get(t0);
         let node1 = this.nodes.get(t1);
 
-        this.peekNodes.set(1, this.createNode(node0.code, [3], null));
-        this.peekNodes.set(2, this.createNode(node1.code, [3], null));
+        this.peekModificationNodes.set(1, this.createNode(node0.code, [3], null));
+        this.peekModificationNodes.set(2, this.createNode(node1.code, [3], null));
 
-        this.peekNodes.set(3, this.createNode(traceModification.change[0].raw.code, [], null));
+        this.peekModificationNodes.set(3, this.createNode(traceModification.change[0].raw.code, [], null));
     }
 
     private createJoinUndo(traceModification: TraceModification): void {
@@ -562,14 +602,14 @@ export class Trace {
             return;
         }
 
-        this.peekNodes.set(0, this.createNode("split", [1], null));
+        this.peekModificationNodes.set(0, this.createNode("split", [1], null));
 
         let change = traceModification.change;
         let original = this.nodes.get(traceModification.targets[0]);
 
-        this.peekNodes.set(1, this.createNode(original.code, [2, 3], null));
-        this.peekNodes.set(2, this.createNode(change[0].raw.code, [], null));
-        this.peekNodes.set(3, this.createNode(change[1].raw.code, [], null));
+        this.peekModificationNodes.set(1, this.createNode(original.code, [2, 3], null));
+        this.peekModificationNodes.set(2, this.createNode(change[0].raw.code, [], null));
+        this.peekModificationNodes.set(3, this.createNode(change[1].raw.code, [], null));
     }
 
     private createSplitUndo(traceModification: TraceModification): void {
@@ -587,5 +627,51 @@ export class Trace {
             targets: [c0, c1],
             change: [change]
         })
+    }
+
+    createIncrementPeek(): void {
+        this.peekIncrementNodes = new Map<number, TraceNode>();
+
+        if (this.increments[this.counter] == null) return;
+        const increments = JSON.parse(JSON.stringify(this.increments[this.counter]));
+
+        // First, set all increment nodes
+        increments.additions.forEach(add => {
+            this.peekIncrementNodes.set(add.index, add.raw);
+        });
+
+        // Now, filter destinations and origins
+        this.peekIncrementNodes.forEach(node => {
+            node.destinations = node.destinations.filter(item => this.peekIncrementNodes.has(item));
+            node.origins = node.origins.filter(item => this.peekIncrementNodes.has(item));
+        });
+    }
+
+    private applyIncrement(increment: TraceIncrement): void {
+        if (increment == null) {
+            console.log("Error: Unexpected null increment");
+            return;
+        }
+        increment.additions.forEach(add => {
+            this.applyAdd({
+                type: TraceModificationType.add,
+                targets: null,
+                change: increment.additions
+            });
+        });
+    }
+
+    private undoIncrement(increments: TraceIncrement): void {
+        if (increments == null) {
+            console.log("Error: Unexpected null increment");
+            return;
+        }
+        increments.additions.forEach(add => {
+            this.applyRemove({
+                type: TraceModificationType.remove,
+                targets: [add.index],
+                change: null
+            });
+        });
     }
 }

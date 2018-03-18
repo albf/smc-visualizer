@@ -36,6 +36,10 @@
                             (click)="peekView();">
                             <i class="fa fa-eye" aria-hidden="true"></i>
                         </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Peek Increment" type="button" class="btn btn-outline-primary"
+                            (click)="peekIncrementView();">
+                            <i class="fa fa-connectdevelop" aria-hidden="true"></i>
+                        </button>
                     </div>
                     <div class="card-nav">{{currentTime | number}} of {{maxTime | number}}</div>
                 </div>
