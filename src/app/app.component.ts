@@ -49,11 +49,25 @@ export class AppComponent {
         }
     }
 
+    advanceToEnd() {
+        while (this.trace.applyNext()) {
+            this.currentTime++;
+        }
+        this.graph.drawTrace(this.trace);
+    }
+
     backTime() {
         if (this.trace.applyUndo()) {
             this.currentTime--;
             this.graph.drawTrace(this.trace);
         }
+    }
+
+    backToStart() {
+        while (this.trace.applyUndo()) {
+            this.currentTime--;
+        }
+        this.graph.drawTrace(this.trace);
     }
 
     zoomIn() {

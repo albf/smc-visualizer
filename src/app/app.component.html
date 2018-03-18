@@ -19,6 +19,7 @@
     <div class="row">
         <div class="col-3">
             <div class="card">
+
                 <div class="card-header">Navigation controls</div>
                 <div class="card-body text-center">
                     <div class="btn-group" role="group" aria-label="...">
@@ -32,6 +33,23 @@
                         <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
                             <i class="fa fa-play" aria-hidden="true"></i>
                         </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Back to Start" type="button" class="btn btn-outline-primary"
+                            (click)="backToStart();">
+                            <i class="fa fa-fast-backward" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Advance to End" type="button" class="btn btn-outline-primary"
+                            (click)="advanceToEnd();">
+                            <i class="fa fa-fast-forward" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="card-nav">{{currentTime | number}} of {{maxTime | number}}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">View Options</div>
+                <div class="card-body text-center">
+                    <div class="btn-group" role="group" aria-label="...">
                         <button data-toggle="tooltip" data-placement="bottom" title="Peek Modification" type="button" class="btn btn-outline-primary"
                             (click)="peekView();">
                             <i class="fa fa-eye" aria-hidden="true"></i>
@@ -41,7 +59,6 @@
                             <i class="fa fa-connectdevelop" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <div class="card-nav">{{currentTime | number}} of {{maxTime | number}}</div>
                 </div>
             </div>
 
