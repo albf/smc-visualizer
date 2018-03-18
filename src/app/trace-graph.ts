@@ -179,7 +179,7 @@ export class TraceGraph {
         this.draw(trace.nodes, specialEdges);
     }
 
-    drawPeek(trace: Trace): void {
+    drawModificationPeek(trace: Trace): void {
         trace.createModificationPeek();
         this.draw(trace.peekModificationNodes);
     }

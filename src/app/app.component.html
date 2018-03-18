@@ -50,13 +50,16 @@
                 <div class="card-header">View Options</div>
                 <div class="card-body text-center">
                     <div class="btn-group" role="group" aria-label="...">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Normal View" type="button" class="btn btn-outline-primary" (click)="normalView();">
+                            <i class="fa fa-connectdevelop" aria-hidden="true"></i>
+                        </button>
                         <button data-toggle="tooltip" data-placement="bottom" title="Peek Modification" type="button" class="btn btn-outline-primary"
-                            (click)="peekView();">
+                            (click)="peekModificationView();">
                             <i class="fa fa-eye" aria-hidden="true"></i>
                         </button>
                         <button data-toggle="tooltip" data-placement="bottom" title="Peek Increment" type="button" class="btn btn-outline-primary"
                             (click)="peekIncrementView();">
-                            <i class="fa fa-connectdevelop" aria-hidden="true"></i>
+                            <i class="fa fa-plus-circle" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>

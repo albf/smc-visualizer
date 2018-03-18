@@ -24,6 +24,7 @@ export class AppComponent {
 
     private currentTime = 0;
     private maxTime = 0;
+    private viewSelected: "normal" | "modification" | "increment";
 
     constructor(private modalService: NgbModal) {
 
@@ -32,30 +33,55 @@ export class AppComponent {
     ngOnInit() {
         this.graph = new TraceGraph();
         this.traceSamples = new TraceSamples();
+
         this.summarizedSample = new SummarizedSample(this.traceSamples.samples);
         this.summarizedSamples = this.summarizedSample.getSummarizedSamples();
         this.drawSample(0);
+    }
+
+    drawTrace(trace: Trace) {
+        switch (this.viewSelected) {
+            case "normal": {
+                this.graph.drawTrace(this.trace);
+                break;
+            }
+            case "modification": {
+                this.graph.drawModificationPeek(this.trace);
+                break;
+            }
+            case "increment": {
+                this.graph.drawIncrementPeek(this.trace);
+                break;
+            }
+        }
     }
 
     drawSample(index: number) {
         this.trace = this.traceSamples.getSample(index).trace;
         this.currentTime = 0;
         this.maxTime = this.trace.modifications.length;
-        this.graph.drawTrace(this.trace);
+        this.normalView();
     }
 
-    peekView() {
-        this.graph.drawPeek(this.trace);
+    normalView() {
+        this.viewSelected = "normal";
+        this.drawTrace(this.trace);
+    }
+
+    peekModificationView() {
+        this.viewSelected = "modification";
+        this.drawTrace(this.trace);
     }
 
     peekIncrementView() {
-        this.graph.drawIncrementPeek(this.trace);
+        this.viewSelected = "increment";
+        this.drawTrace(this.trace);
     }
 
     advanceTime() {
         if (this.trace.applyNext()) {
             this.currentTime++;
-            this.graph.drawTrace(this.trace);
+            this.drawTrace(this.trace);
         }
     }
 
@@ -63,13 +89,13 @@ export class AppComponent {
         while (this.trace.applyNext()) {
             this.currentTime++;
         }
-        this.graph.drawTrace(this.trace);
+        this.drawTrace(this.trace);
     }
 
     backTime() {
         if (this.trace.applyUndo()) {
             this.currentTime--;
-            this.graph.drawTrace(this.trace);
+            this.drawTrace(this.trace);
         }
     }
 
@@ -77,7 +103,7 @@ export class AppComponent {
         while (this.trace.applyUndo()) {
             this.currentTime--;
         }
-        this.graph.drawTrace(this.trace);
+        this.drawTrace(this.trace);
     }
 
     zoomIn() {
