@@ -18,14 +18,15 @@ export class TraceGraph {
     paperWidth: number;
     paperHeight: number;
     scale = 1;
+    count = 500;
 
     textCanvas: any;
     startNode: joint.shapes.basic.Rect;
 
     constructor() {
-        const element = jQuery("#graph");
-        this.paperWidth = element.width();
-        this.paperHeight = element.height();
+        const element = jQuery("#paper");
+        //this.paperWidth = this.count / 2 * 110;
+        //this.paperHeight = 500 * 110;
 
         this.graph = new joint.dia.Graph;
 
@@ -34,6 +35,7 @@ export class TraceGraph {
             width: this.paperWidth,
             height: this.paperHeight,
             model: this.graph,
+            async: false,
             gridSize: 1
         });
     }
@@ -71,7 +73,11 @@ export class TraceGraph {
         opts['marginX'] = ((this.paperWidth / 2) - this.scale * (parseInt(position['x']) + (parseInt(size['width']) / 2))) / this.scale;
         opts['marginY'] = (this.paperHeight / 50) - parseInt(position['y']);
 
-        joint.layout.DirectedGraph.layout(this.graph, opts);
+        // joint.layout.DirectedGraph.layout(this.graph, opts);
+
+        var a = this.graph.getBBox();
+
+        this.paper.setDimensions(a.width, a.height);
     }
 
     // Use canvas meaureText to calculate text width. Shouldn't mess with the DOM.
@@ -84,7 +90,7 @@ export class TraceGraph {
         return metrics.width;
     };
 
-    private createRect(code: string, color = 'white'): joint.shapes.basic.Rect {
+    private createRect(code: string, color = 'white'): joint.shapes.basic.Generic {
         const lines = code.split(/\r\n|\r|\n/);
         const fontSize = 14;
         const fontFamily = "sans-serif";
@@ -98,9 +104,45 @@ export class TraceGraph {
             }
         });
 
-        return new joint.shapes.basic.Rect({
-            size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
-            attrs: { rect: { fill: color }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
+        return new joint.shapes.basic.Generic({
+            // size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
+            // attrs: { rect: { fill: color }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
+            markup: '<rect/><text/>',
+            size: {
+                width: maxWidth + borderSize,
+                height: lines.length * fontSize + borderSize
+            },
+            attrs: {
+                rect: {
+                    // Using of special 'ref-like` attributes it's not generally the most
+                    // performer. In this particular case it's different though.
+                    // If the `ref` attribute is not defined all the metrics (width, height, x, y)
+                    // are taken from the model. There is no need to ask the browser for
+                    // an element bounding box.
+                    // All calculation are done just in Javascript === very fast.
+                    'ref-width': '100%',
+                    'ref-height': '100%',
+                    'stroke': 'red',
+                    'stroke-width': 2,
+                    'fill': 'lightgray'
+                },
+                text: {
+                    'text': code,
+                    'fill': 'black',
+                    // Please see the `ref-width` & `ref-height` comment.
+                    'ref-x': '50%',
+                    'ref-y': '50%',
+                    // Do not use special attribute `x-alignment` when not necessary.
+                    // It calls getBBox() on the SVGText element internally. Measuring text
+                    // in the browser is usually the slowest.
+                    // `text-anchor` attribute does the same job here (works for the text elements only).
+                    // 'text-anchor': 'middle',
+                    // Do not use special attribute `y-alignment`. See above.
+                    // `y="0.3em"` gives the best result.
+                    'y': '.3em'
+                }
+            },
+            z: 2
         });
     }
 
