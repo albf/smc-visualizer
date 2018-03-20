@@ -130,6 +130,7 @@ export class AppComponent {
     }
 
     rasterize() {
+        this.graph.saveToPNG();
     }
 
     rasterizeSVG() {
