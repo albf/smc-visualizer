@@ -38,7 +38,7 @@ export class TraceSamples {
                 .appendNode(33, "j", [34])
                 .appendNode(34, "j", [35])
                 .appendNode(35, "j", [36])
-                .appendNode(36, "j", [])
+                .appendNode(36, "kkk\nkkk\nsss\nsdasd\nsdaasds\nsdasds", [])
 
                 .appendTraceModification(TraceModificationType.remove, [3], [9])
                 .createIncrementNode(20, "inc-1-1", [21, 22], [3])

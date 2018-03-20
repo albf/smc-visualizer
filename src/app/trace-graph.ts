@@ -15,8 +15,8 @@ export class TraceGraph {
     graph: joint.dia.Graph;
     paper: joint.dia.Paper;
 
-    paperWidth: number;
-    paperHeight: number;
+    containerWidth: number;
+    containerHeight: number;
     scale = 1;
     count = 500;
 
@@ -25,17 +25,17 @@ export class TraceGraph {
 
     constructor() {
         const element = jQuery("#paper");
-        //this.paperWidth = this.count / 2 * 110;
-        //this.paperHeight = 500 * 110;
+        const container = jQuery("#paper-container");
+        this.containerWidth = container.width();
+        this.containerHeight = container.height();
 
         this.graph = new joint.dia.Graph;
 
         this.paper = new joint.dia.Paper({
             el: element,
-            width: this.paperWidth,
-            height: this.paperHeight,
+            width: this.containerWidth,
+            height: this.containerHeight,
             model: this.graph,
-            async: false,
             gridSize: 1
         });
     }
@@ -70,14 +70,18 @@ export class TraceGraph {
 
         // marginX is exactly the middle and marginX is just 2% paper size
         // Scale should be considered, as values keep the same value and there is a "movement" impression.
-        opts['marginX'] = ((this.paperWidth / 2) - this.scale * (parseInt(position['x']) + (parseInt(size['width']) / 2))) / this.scale;
-        opts['marginY'] = (this.paperHeight / 50) - parseInt(position['y']);
+        opts['marginX'] = ((this.containerWidth / 2) - this.scale * (parseInt(position['x']) + (parseInt(size['width']) / 2))) / this.scale;
+        opts['marginY'] = (this.containerHeight / 50) - parseInt(position['y']);
 
-        // joint.layout.DirectedGraph.layout(this.graph, opts);
+        joint.layout.DirectedGraph.layout(this.graph, opts);
 
-        var a = this.graph.getBBox();
+        this.definePaperDimension();
+    }
 
-        this.paper.setDimensions(a.width, a.height);
+    private definePaperDimension() {
+        var bbox = this.graph.getBBox();
+        this.paper.setDimensions(Math.max(bbox.width * this.scale + 40, this.containerWidth),
+            Math.max(bbox.height * this.scale + 40, this.containerHeight));
     }
 
     // Use canvas meaureText to calculate text width. Shouldn't mess with the DOM.
@@ -210,14 +214,18 @@ export class TraceGraph {
     }
 
     expandPaper(): void {
-        this.paperHeight += 100;
-        this.paper.setDimensions(this.paperWidth, this.paperHeight);
+        const element = jQuery("#paper-container");
+        element.height(element.height() + 100);
+        this.containerHeight += 100;
+        this.definePaperDimension();
     }
 
     compressPaper(): void {
-        if (this.paperHeight > 100) {
-            this.paperHeight -= 100;
-            this.paper.setDimensions(this.paperWidth, this.paperHeight);
+        if (this.containerHeight > 100) {
+            const element = jQuery("#paper-container");
+            element.height(element.height() - 100);
+            this.containerHeight -= 100;
+            this.definePaperDimension();
         }
     }
 }
