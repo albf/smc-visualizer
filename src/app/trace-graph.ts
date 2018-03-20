@@ -23,6 +23,9 @@ export class TraceGraph {
     textCanvas: any;
     startNode: joint.shapes.basic.Rect;
 
+    currentMarginX: number;
+    currentMarginY: number;
+
     constructor() {
         const element = jQuery("#paper");
         const container = jQuery("#paper-container");
@@ -73,6 +76,14 @@ export class TraceGraph {
         opts['marginX'] = ((this.containerWidth / 2) - this.scale * (parseInt(position['x']) + (parseInt(size['width']) / 2))) / this.scale;
         opts['marginY'] = (this.containerHeight / 50) - parseInt(position['y']);
 
+        // Don't accept negative margin. TODO: maybe try to set the scroll initial position?
+        if (opts['marginX'] < 0) {
+            opts['marginX'] = 0;
+        }
+
+        this.currentMarginX = opts['marginX'];
+        this.currentMarginY = opts['marginY'];
+
         joint.layout.DirectedGraph.layout(this.graph, opts);
 
         this.definePaperDimension();
@@ -80,8 +91,13 @@ export class TraceGraph {
 
     private definePaperDimension() {
         var bbox = this.graph.getBBox();
-        this.paper.setDimensions(Math.max(bbox.width * this.scale + 40, this.containerWidth),
-            Math.max(bbox.height * this.scale + 40, this.containerHeight));
+
+        // Idea is to set a good dimenion for the paper, which is inside the container. Both will have,
+        // at least the size of the container (this.containerWidth and this.containerHeight).
+        // The max would be the size of the graph + the margin, but multiplication by the scale is necessary.
+        // An extra safety margin (2% of the container) is added.
+        this.paper.setDimensions(Math.max((bbox.width + this.currentMarginX) * this.scale + (this.containerHeight / 50), this.containerWidth),
+            Math.max((bbox.height + this.currentMarginY) * this.scale + (this.containerHeight / 50), this.containerHeight));
     }
 
     // Use canvas meaureText to calculate text width. Shouldn't mess with the DOM.
