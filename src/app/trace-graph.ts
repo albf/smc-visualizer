@@ -229,19 +229,22 @@ export class TraceGraph {
         }
     }
 
-    expandPaper(): void {
+    private updateContainerHeight(difference: number) {
         const element = jQuery("#paper-container");
-        element.height(element.height() + 100);
-        this.containerHeight += 100;
+        this.containerHeight += difference;
+
+        element.height(this.containerHeight);
+        element.css("max-height", this.containerHeight);
         this.definePaperDimension();
+    }
+
+    expandPaper(): void {
+        this.updateContainerHeight(100);
     }
 
     compressPaper(): void {
         if (this.containerHeight > 100) {
-            const element = jQuery("#paper-container");
-            element.height(element.height() - 100);
-            this.containerHeight -= 100;
-            this.definePaperDimension();
+            this.updateContainerHeight(-100);
         }
     }
 }
