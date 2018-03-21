@@ -216,7 +216,10 @@ export class TraceGraph {
 
         return new joint.shapes.basic.Rect({
             size: { width: maxWidth + borderSize, height: lines.length * fontSize + borderSize },
-            attrs: { rect: { fill: color }, text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily } }
+            attrs: {
+                rect: { fill: color },
+                text: { text: code, fill: 'gray', fontSize: fontSize, fontFamily, 'text-anchor': 'left', 'ref-x': borderSize / 2 }
+            }
         });
     }
 
