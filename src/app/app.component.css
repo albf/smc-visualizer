@@ -15,17 +15,16 @@
         padding-top: 8px;
     }
 
-    #paper {
+    #paper-container {
         background: rgba(0, 0, 0, 0.03);
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 0.4rem;
-        min-height: 500px;
-    }
-    
-    #graph {
-        height: 100%;
         overflow: scroll;
-        width: 100%;
+        max-height: 440px;
+    }
+
+    #paper {
+        height: 100%;
     }
 
     .modal-samples-list li {
