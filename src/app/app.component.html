@@ -23,22 +23,23 @@
                 <div class="card-header">Navigation controls</div>
                 <div class="card-body text-center">
                     <div class="btn-group" role="group" aria-label="...">
-                        <button data-toggle="tooltip" data-placement="bottom" title="Back Time" type="button" class="btn btn-outline-primary" (click)="backTime();">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Back Time" [disabled]="currentTime == 0" type="button" class="btn btn-outline-primary"
+                            (click)="backTime();">
                             <i class="fa fa-step-backward" aria-hidden="true"></i>
                         </button>
-                        <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" type="button" class="btn btn-outline-primary"
-                            (click)="advanceTime();">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Advance Time" [disabled]="currentTime == maxTime" type="button"
+                            class="btn btn-outline-primary" (click)="advanceTime();">
                             <i class="fa fa-step-forward" aria-hidden="true"></i>
                         </button>
                         <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
                             <i class="fa fa-play" aria-hidden="true"></i>
                         </button>
-                        <button data-toggle="tooltip" data-placement="bottom" title="Back to Start" type="button" class="btn btn-outline-primary"
+                        <button data-toggle="tooltip" data-placement="bottom" title="Back to Start" [disabled]="currentTime == 0" type="button" class="btn btn-outline-primary"
                             (click)="backToStart();">
                             <i class="fa fa-fast-backward" aria-hidden="true"></i>
                         </button>
-                        <button data-toggle="tooltip" data-placement="bottom" title="Advance to End" type="button" class="btn btn-outline-primary"
-                            (click)="advanceToEnd();">
+                        <button data-toggle="tooltip" data-placement="bottom" title="Advance to End" [disabled]="currentTime == maxTime" type="button"
+                            class="btn btn-outline-primary" (click)="advanceToEnd();">
                             <i class="fa fa-fast-forward" aria-hidden="true"></i>
                         </button>
                     </div>
