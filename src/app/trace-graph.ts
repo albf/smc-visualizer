@@ -110,11 +110,26 @@ export class TraceGraph {
         return metrics.width;
     };
 
-    saveToPNG() {
+    private getSVG(): SVGSVGElement {
         const svg = document.getElementById('paper').getElementsByTagName("svg")[0];
+
         // Important, otherwise background will have black marks.
         svg.style['fill'] = 'white';
+        return svg;
+    }
 
+    saveSVG() {
+        const svgString = new XMLSerializer().serializeToString(this.getSVG());
+        const a = document.createElement('a');
+
+        a.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+        a.download = "smc-visualizer.svg";
+        document.body.appendChild(a);
+        a.click();
+    }
+
+    saveToPNG() {
+        const svg = this.getSVG();
         const svgString = new XMLSerializer().serializeToString(svg);
 
         const canvas = document.createElement("canvas");
