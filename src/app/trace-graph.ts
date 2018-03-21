@@ -110,6 +110,75 @@ export class TraceGraph {
         return metrics.width;
     };
 
+    private getSVG(): SVGSVGElement {
+        const svg = document.getElementById('paper').getElementsByTagName("svg")[0];
+
+        // Important, otherwise background will have black marks.
+        svg.style['fill'] = 'white';
+        return svg;
+    }
+
+    saveSVG() {
+        const svgString = new XMLSerializer().serializeToString(this.getSVG());
+        const a = document.createElement('a');
+
+        a.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+        a.download = "smc-visualizer.svg";
+        document.body.appendChild(a);
+        a.click();
+    }
+
+    saveToPNG() {
+        const svg = this.getSVG();
+        const svgString = new XMLSerializer().serializeToString(svg);
+
+        const canvas = document.createElement("canvas");
+        const bbox = svg.getBBox();
+
+        var marginX = this.currentMarginX;
+        var marginY = this.currentMarginY;
+
+        console.log(bbox.width);
+        console.log(bbox.height);
+        canvas.width = bbox.width + marginX;
+        canvas.height = bbox.height + marginY * 2;
+
+        const ctx = canvas.getContext("2d");
+        const DOMURL = self.URL || (self as any).webkitURL || self;
+
+        const img = new Image;
+
+        const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        const url = DOMURL.createObjectURL(svgBlob);
+
+        img.onload = function () {
+            // Background
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // TODO: Cut remaining white area.
+            ctx.drawImage(img, 0, 0);
+
+            DOMURL.revokeObjectURL(url);
+            if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
+                const blob = canvas.msToBlob();
+                navigator.msSaveOrOpenBlob(blob, "smc-visualizer.png");
+            }
+            else {
+                const imgURI = canvas
+                    .toDataURL("image/png")
+                    .replace("image/png", "image/octet-stream");
+                const a = document.createElement('a');
+                a.href = imgURI;
+                a.download = "smc-visualizer.png";
+                document.body.appendChild(a);
+                a.click();
+            }
+        }
+        img.src = url;
+    }
+
     private createRect(code: string, color = 'white'): joint.shapes.basic.Rect {
         const lines = code.split(/\r\n|\r|\n/);
         const fontSize = 14;
@@ -150,6 +219,10 @@ export class TraceGraph {
         }
 
         return new joint.dia.Link({
+            'markup': [
+                '<path class="connection" stroke="black" d="M 0 0 0 0"/>',
+                '<path class="marker-source" fill="black" stroke="black" d="M 0 0 0 0"/>',
+                '<path class="marker-target" fill="black" stroke="black" d="M 0 0 0 0"/>'].join(''),
             attrs,
             source: { id: sourceId },
             target: { id: targetId }
