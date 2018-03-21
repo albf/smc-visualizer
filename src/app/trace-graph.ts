@@ -111,10 +111,23 @@ export class TraceGraph {
     };
 
     private getSVG(): SVGSVGElement {
-        const svg = document.getElementById('paper').getElementsByTagName("svg")[0];
+        const svgOriginal = document.getElementById('paper').getElementsByTagName("svg")[0];
+        const svg = svgOriginal.cloneNode(true) as SVGSVGElement;
+
+        // BBox doesn't get copied. It's required to get the size.
+        // Store it in the cloned element.
+        const bbox = svgOriginal.getBBox();
+
+        // Scale will make bbox dirty. Fix it.
+        svg.style['bbox-width'] = bbox.width / this.scale;
+        svg.style['bbox-height'] = bbox.height / this.scale;
 
         // Important, otherwise background will have black marks.
+        // Also fix the initial position and remove scale transformation (if any).
         svg.style['fill'] = 'white';
+        svg.setAttribute('transform', 'translate(' + (-this.currentMarginX) + ')');
+        svg.firstElementChild.setAttribute('transform', '');
+
         return svg;
     }
 
@@ -133,15 +146,12 @@ export class TraceGraph {
         const svgString = new XMLSerializer().serializeToString(svg);
 
         const canvas = document.createElement("canvas");
-        const bbox = svg.getBBox();
 
-        var marginX = this.currentMarginX;
-        var marginY = this.currentMarginY;
+        const marginX = this.currentMarginX;
+        const marginY = this.currentMarginY;
 
-        console.log(bbox.width);
-        console.log(bbox.height);
-        canvas.width = bbox.width + marginX;
-        canvas.height = bbox.height + marginY * 2;
+        canvas.width = svg.style['bbox-width'] + marginX;
+        canvas.height = svg.style['bbox-height'] + marginY * 2;
 
         const ctx = canvas.getContext("2d");
         const DOMURL = self.URL || (self as any).webkitURL || self;
@@ -157,17 +167,28 @@ export class TraceGraph {
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // TODO: Cut remaining white area.
-            ctx.drawImage(img, 0, 0);
+            // Draw the whole graph into the canvas.
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height) //, 0, 0, 0, 0);
+
+            // Use a second canvas to properly cut the data.
+            // Using only one would be ideal, but it's now working in Chrome.
+            const cutCanvas = document.createElement('canvas');
+            const cutCtx = cutCanvas.getContext("2d");
+
+            cutCanvas.width = svg.style['bbox-width'];
+            cutCanvas.height = svg.style['bbox-height'];
+
+            var data = ctx.getImageData(0, 0, cutCanvas.width, cutCanvas.height);
+            cutCtx.putImageData(data, 0, 0);
 
             DOMURL.revokeObjectURL(url);
             if (typeof navigator !== "undefined" && navigator.msSaveOrOpenBlob) {
-                const blob = canvas.msToBlob();
+                const blob = cutCanvas.msToBlob();
                 navigator.msSaveOrOpenBlob(blob, "smc-visualizer.png");
             }
             else {
-                const imgURI = canvas
-                    .toDataURL("image/png")
+                const imgURI = cutCanvas
+                    .toDataURL("image/png", )
                     .replace("image/png", "image/octet-stream");
                 const a = document.createElement('a');
                 a.href = imgURI;
