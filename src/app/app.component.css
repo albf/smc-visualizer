@@ -27,8 +27,20 @@
         height: 100%;
     }
 
+    .modal-samples-list {
+        -webkit-padding-start: 0;
+    }
+
     .modal-samples-list li {
+        background: rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 0.4rem;
+        color: #78C2AD;
+        cursor: pointer;
+        list-style-type: none;
         margin-bottom: 16px;
+        padding: 16px;
+        text-decoration: none;
     }
 
     .modal-samples-list li strong {
