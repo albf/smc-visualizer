@@ -2,6 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { DragScrollModule } from 'ngx-drag-scroll';
 import { AppComponent } from './app.component';
 
 
@@ -11,6 +12,7 @@ import { AppComponent } from './app.component';
     ],
     imports: [
         BrowserModule,
+        DragScrollModule,
         NgbModule.forRoot()
     ],
     providers: [],

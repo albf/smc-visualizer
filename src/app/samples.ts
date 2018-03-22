@@ -32,7 +32,11 @@ export class TraceSamples {
                 .appendNode(6, "g", [7])
                 .appendNode(7, "h", [8])
                 .appendNode(8, "i", [9])
-                .appendNode(9, "j", [])
+                .appendNode(9, "j", [10])
+                .appendNode(10, "j", [11])
+                .appendNode(11, "j", [12])
+                .appendNode(12, "j", [13])
+                .appendNode(13, "j", [])
 
                 .appendTraceModification(TraceModificationType.remove, [3], [9])
                 .createIncrementNode(20, "inc-1-1", [21, 22], [3])
