@@ -129,6 +129,10 @@ export class AppComponent {
         this.modalService.open(content);
     }
 
+    selectSample(element) {
+        this.drawSample(element);
+    }
+
     rasterize() {
         this.graph.saveToPNG();
     }

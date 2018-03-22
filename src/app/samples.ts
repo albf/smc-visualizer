@@ -11,6 +11,7 @@ export class TraceSamples {
 
     constructor() {
         this.sample1();
+        this.sample2();
     }
 
     getSample(index: number): TraceSample {
@@ -31,14 +32,7 @@ export class TraceSamples {
                 .appendNode(6, "g", [7])
                 .appendNode(7, "h", [8])
                 .appendNode(8, "i", [9])
-                .appendNode(9, "j", [30])
-                .appendNode(30, "j", [31])
-                .appendNode(31, "j", [32])
-                .appendNode(32, "j", [33])
-                .appendNode(33, "j", [34])
-                .appendNode(34, "j", [35])
-                .appendNode(35, "j", [36])
-                .appendNode(36, "kkk\nkkk\nsss\nsdasd\nsdaasds\nsdasds", [])
+                .appendNode(9, "j", [])
 
                 .appendTraceModification(TraceModificationType.remove, [3], [9])
                 .createIncrementNode(20, "inc-1-1", [21, 22], [3])
@@ -62,6 +56,27 @@ export class TraceSamples {
                 .createTraceModificationNode(12, "f-2", [10], [0])
                 .appendTraceModification(TraceModificationType.split, [0], [5])
                 .appendIncrement()
+                .build()
+        });
+    }
+
+    private sample2() {
+        const code = `push rbp
+mov rbp, rsp
+sub rsp, 80
+mov QWORD PTR [rbp-72], rdi
+mov DWORD PTR [rbp-76], esi
+mov DWORD PTR [rbp-80], edx,
+jne .L2`
+
+        this.samples.push({
+            name: "Small x86",
+            description: "Small x86 random instructions",
+            trace: new Trace()
+                .appendNode(0, 'start', [1])
+                .appendNode(1, code, [2, 3])
+                .appendNode(2, code, [])
+                .appendNode(3, code, [])
                 .build()
         });
     }
