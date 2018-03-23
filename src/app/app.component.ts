@@ -4,7 +4,6 @@ import { NgbModal, ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
 
 import { Trace } from "./trace";
 import { TraceSamples } from "./samples";
-import { SummarizedSample } from "./summarized-sample";
 
 
 @Component({
@@ -20,8 +19,6 @@ export class AppComponent {
     private trace: Trace;
     private traceSamples: TraceSamples;
     private modalService: NgbModal;
-    private summarizedSample: SummarizedSample;
-    private summarizedSamples;
 
     currentTime = 0;
     maxTime = 0;
@@ -34,9 +31,6 @@ export class AppComponent {
     ngOnInit() {
         this.graph = new TraceGraph();
         this.traceSamples = new TraceSamples();
-
-        this.summarizedSample = new SummarizedSample(this.traceSamples.samples);
-        this.summarizedSamples = this.summarizedSample.getSummarizedSamples();
         this.drawSample(0);
     }
 

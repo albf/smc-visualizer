@@ -103,9 +103,9 @@
         </div>
         <div class="modal-body">
             <ul class="modal-samples-list">
-                <li *ngFor="let summarizedSample of summarizedSamples; let i = index" (click)="selectSample(i); d('Cross click')">
-                    <strong>{{ summarizedSample.name }}</strong>
-                    {{ summarizedSample.description }}
+                <li *ngFor="let sample of traceSamples.samples; let i = index" (click)="selectSample(i); d('Cross click')">
+                    <strong>{{ sample.name }}</strong>
+                    {{ sample.description }}
                 </li>
             </ul>
         </div>
