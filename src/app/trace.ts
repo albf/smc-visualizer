@@ -37,7 +37,7 @@ export interface TraceIncrement {
 export class Trace {
     counter: number;
     nodes: Map<number, TraceNode>;                  // The graph, represented using a map
-    increments: TraceIncrement[];                  // Increments are always a pack of additions
+    increments: TraceIncrement[];                   // Increments are always a pack of additions
     modifications: TraceModification[];
 
     private traceGraphChanges: TraceGraphChange[];  // Used by the builder
@@ -59,6 +59,91 @@ export class Trace {
         this.traceGraphChanges = [];
         this.traceIncrement = { additions: [] };
     }
+
+    private validateAddNode(nodes: Map<number, boolean>, elem: number, what: string, index: number) {
+        if (nodes.has(elem)) {
+            throw new SyntaxError(what + " of element " + elem + " already used at index: " + index);
+        }
+        nodes.set(elem, true);
+    }
+
+    private validateExistNode(nodes: Map<number, boolean>, elem: number, what: string, index: number) {
+        if (!nodes.has(elem)) {
+            throw new SyntaxError(what + " of element " + elem + " completely unknown at index: " + index);
+        } else if (!nodes.get(elem)) {
+            throw new SyntaxError(what + " of element " + elem + " current unknown at index: " + index);
+        }
+    }
+
+    private validateRemoveNode(nodes: Map<number, boolean>, elem: number, what: string, index: number) {
+        this.validateExistNode(nodes, elem, what, index);
+        nodes.set(elem, false);
+    }
+
+    validate() {
+        let currentNodes: Map<number, boolean> = new Map<number, boolean>();
+
+        if (this.increments.length > this.modifications.length) {
+            throw new RangeError("Number of modifications should be >= number of increments");
+        }
+
+        this.nodes.forEach((v, i) => {
+            currentNodes.set(i, true);
+        })
+
+        for (let i = 0; i < this.modifications.length; i++) {
+            const mod = this.modifications[i];
+            switch (mod.type) {
+                case TraceModificationType.add: {
+                    mod.change.forEach(c => {
+                        this.validateAddNode(currentNodes, c.index, "Addition", i);
+                    });
+                    break;
+                }
+                case TraceModificationType.remove: {
+                    mod.targets.forEach(t => {
+                        this.validateRemoveNode(currentNodes, t, "Removal", i);
+                    });
+                    break;
+                }
+                case TraceModificationType.modify: {
+                    mod.targets.forEach(t => {
+                        this.validateExistNode(currentNodes, t, "Modification--", i);
+                    });
+                    break;
+                }
+                case TraceModificationType.join: {
+                    if (!this.isJoinValid(mod)) {
+                        throw new SyntaxError("Invalid join modification syntax at index: " + i);
+                    }
+                    this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
+                    this.validateRemoveNode(currentNodes, mod.targets[1], "Join/Removal", i);
+                    this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
+                    break;
+                }
+                case TraceModificationType.split: {
+                    if (!this.isSplitValid(mod)) {
+                        throw new SyntaxError("Invalid split modification syntax at index: " + i);
+                    }
+                    this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
+                    this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
+                    this.validateAddNode(currentNodes, mod.change[1].index, "Join/Addition", i);
+                    break;
+                }
+                default: {
+                    throw new SyntaxError("Unexpected modification type");
+                }
+            }
+
+            // Check if not incrementing some node already used.
+            if (this.increments.length >= i) {
+                this.increments[i].additions.forEach(tgc => {
+                    this.validateAddNode(currentNodes, tgc.index, "Modification/Addition", i);
+                });
+            }
+        }
+    }
+
 
     appendNode(index: number, code: string, destinations: number[]): Trace {
         const tn = this.createNode(code, destinations, null);
@@ -134,6 +219,9 @@ export class Trace {
                 this.nodes.get(destination).origins.push(origin);
             });
         });
+
+        // Validate before build
+        this.validate();
         return this;
     }
 
@@ -477,6 +565,11 @@ export class Trace {
 
             console.log("Error: join requires exactly one new code");
             return false;
+        } else if (!this.hasNode(traceModification.targets[0], true)
+            || !this.hasNode(traceModification.targets[1], true)) {
+
+            console.log("Error: join expects both targets to exist");
+            return false
         }
 
         return true;
@@ -490,36 +583,31 @@ export class Trace {
         const t0 = traceModification.targets[0];
         const t1 = traceModification.targets[1];
 
-        if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
-
         const node0 = this.nodes.get(t0);
         const node1 = this.nodes.get(t1);
-        const origins = [];
-        const isOriginsEmpty = traceModification.change[0].raw.origins == null
-            || traceModification.change[0].raw.origins.length == 0;
 
-        if (isOriginsEmpty) {
-            // Add origins from previous nodes
-            node0.origins.concat(node1.origins).forEach((r) => {
-                if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
-                    origins.push(r);
-                }
-            })
-        }
+        const originsNode0 = node0.origins != null ? node0.origins : [];
+        const originsNode1 = node1.origins != null ? node1.origins : [];
+        const origins = [];
+
+        // Add origins from previous nodes
+        originsNode0.concat(originsNode1).forEach((r) => {
+            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                origins.push(r);
+            }
+        })
 
         // Remove node1 and node2
         this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
         // Adds the new node. Add requires origins to be set
-        if (isOriginsEmpty) {
+        if (origins.length > 0) {
             traceModification.change[0].raw.origins = origins;
         }
         this.applyAdd(traceModification);
-        if (isOriginsEmpty) {
+        if (origins.length > 0) {
             traceModification.change[0].raw.origins = null;;
         }
-
-        // TODO: Check for orphans?
     }
 
     private peekJoin(traceModification: TraceModification): void {
@@ -570,6 +658,10 @@ export class Trace {
         } else if (traceModification.change.length != 2) {
             console.log("Error: join requires new code");
             return false;
+        } else if (this.hasNode(traceModification.change[0].index, false)
+            || this.hasNode(traceModification.change[1].index, false)) {
+
+            console.log("Error: split new nodes should be new values");
         }
         return true;
     }
@@ -579,21 +671,14 @@ export class Trace {
             return;
         }
 
-        let t0 = traceModification.targets[0];
-        let change = traceModification.change;
-
-        if (this.hasNode(change[0].index, false) || this.hasNode(change[1].index, false)) {
-            console.log("Error: split new nodes should be new values");
-        }
-
         // Remove t0
-        this.applyRemove({ type: TraceModificationType.remove, targets: [t0] });
+        this.applyRemove({ type: TraceModificationType.remove, targets: [traceModification.targets[0]] });
 
         // Add c0 and c1
         this.applyAdd({
             type: TraceModificationType.add,
-            targets: [t0, t0],
-            change: change
+            targets: [],
+            change: traceModification.change
         });
     }
 
