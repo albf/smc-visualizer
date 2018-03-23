@@ -19,6 +19,7 @@ export class AppComponent {
     private graph: TraceGraph;
     private trace: Trace;
     private traceSamples: TraceSamples;
+    private modalService: NgbModal;
     private summarizedSample: SummarizedSample;
     private summarizedSamples;
 
@@ -26,8 +27,8 @@ export class AppComponent {
     maxTime = 0;
     private viewSelected: "normal" | "modification" | "increment";
 
-    constructor(private modalService: NgbModal) {
-
+    constructor(modalService: NgbModal) {
+        this.modalService = modalService;
     }
 
     ngOnInit() {

@@ -24,8 +24,7 @@
                 "../node_modules/jointjs/css/layout.css"
             ],
             "scripts": [
-                "../node_modules/jquery/dist/jquery.min.js",
-                "../node_modules/jointjs/dist/joint.js"
+                "../node_modules/jquery/dist/jquery.min.js"
             ],
             "environmentSource": "environments/environment.ts",
             "environments": {
