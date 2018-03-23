@@ -1,0 +1,26 @@
+{
+	"nodes": {
+		"0": {
+			"code": "start",
+			"destinations": [1],
+			"origins": []
+		},
+		"1": {
+			"code": "push rbp\nmov rbp, rsp\nsub rsp, 80\nmov QWORD PTR [rbp-72], rdi\nmov DWORD PTR [rbp-76], esi\nmov DWORD PTR [rbp-80], edx,\njne .L2",
+			"destinations": [2, 3],
+			"origins": [0]
+		},
+		"2": {
+			"code": "push rbp\nmov rbp, rsp\nsub rsp, 80\nmov QWORD PTR [rbp-72], rdi\nmov DWORD PTR [rbp-76], esi\nmov DWORD PTR [rbp-80], edx,\njne .L2",
+			"destinations": [],
+			"origins": [1]
+		},
+		"3": {
+			"code": "push rbp\nmov rbp, rsp\nsub rsp, 80\nmov QWORD PTR [rbp-72], rdi\nmov DWORD PTR [rbp-76], esi\nmov DWORD PTR [rbp-80], edx,\njne .L2",
+			"destinations": [],
+			"origins": [1]
+		}
+	},
+	"modifications": [],
+	"increments": []
+}

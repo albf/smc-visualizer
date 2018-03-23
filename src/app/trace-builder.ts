@@ -10,6 +10,10 @@ export class TraceBuilder {
     private modifications: TraceModification[];
 
     constructor() {
+        this.init();
+    }
+
+    private init() {
         this.traceGraphChanges = [];
         this.traceIncrement = { additions: [] };
 
@@ -189,6 +193,40 @@ export class TraceBuilder {
         this.traceIncrement = { additions: [] };
 
         return this;
+    }
+
+    fromFile(json: string): Trace {
+        let parsed = JSON.parse(json);
+
+        this.init();
+
+        if (parsed["modifications"] == undefined) {
+            console.log("Warning: Unexpected modifications undefined");
+
+        } else {
+            this.modifications = parsed["modifications"];
+        }
+
+        if (parsed["increments"] == undefined) {
+            console.log("Warning: Unexpected increments undefined");
+
+        } else {
+            this.increments = parsed["increments"];
+        }
+
+        if (parsed["nodes"] == undefined) {
+            console.log("Warning: Unexpected nodes undefined");
+
+        } else if (typeof parsed["nodes"] != 'object') {
+            console.log("Error: Nodes should be an object of TraceNode entries");
+        }
+        else {
+            Object.keys((parsed["nodes"] as Object)).forEach((v) => {
+                this.nodes.set(parseInt(v), parsed["nodes"][v]);
+            });
+        }
+
+        return this.build();
     }
 
     build(): Trace {

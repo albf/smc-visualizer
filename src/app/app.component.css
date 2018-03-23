@@ -24,7 +24,7 @@
 
         cursor: grab;
         cursor : -o-grab;
-        cursor : -moz-grab; 
+        cursor : -moz-grab;
         cursor : -webkit-grab;
     }
 
@@ -50,4 +50,8 @@
 
     .modal-samples-list li strong {
         display: block;
+    }
+
+    input[type="file"] {
+        display: none;
     }

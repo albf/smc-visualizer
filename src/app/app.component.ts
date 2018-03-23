@@ -4,6 +4,7 @@ import { NgbModal, ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
 
 import { Trace } from "./trace";
 import { TraceSamples } from "./samples";
+import { TraceBuilder } from "./trace-builder";
 
 
 @Component({
@@ -52,7 +53,11 @@ export class AppComponent {
     }
 
     drawSample(index: number) {
-        this.trace = this.traceSamples.getSample(index).trace;
+        this.initTrace(this.traceSamples.getSample(index).trace);
+    }
+
+    initTrace(trace: Trace) {
+        this.trace = trace;
         this.currentTime = 0;
         this.maxTime = this.trace.modifications.length;
         this.normalView();
@@ -136,6 +141,14 @@ export class AppComponent {
         this.graph.saveSVG();
     }
 
-    loadTraceFile() {
+    loadTraceFile(files: FileList) {
+        let fileToUpload: File = files.item(0);
+
+        var reader = new FileReader();
+        reader.onload = function (event) {
+            this.initTrace(new TraceBuilder()
+                .fromFile(event.target["result"]));
+        }.bind(this);
+        reader.readAsText(fileToUpload);
     }
 }
