@@ -1,5 +1,6 @@
 import { async } from '@angular/core/testing';
 import { TraceSamples } from './samples';
+import { Trace } from './trace';
 
 describe('TraceSamples', () => {
     it('should build all samples correctly', async(() => {
@@ -10,15 +11,13 @@ describe('TraceSamples', () => {
         const ts = new TraceSamples();
 
         for (let s of ts.samples) {
-            let original = JSON.parse(JSON.stringify(s.trace));
+            const j1 = s.trace.dumpString();
 
             while (s.trace.applyNext());
             while (s.trace.applyUndo());
 
-            const j1 = JSON.stringify(original);
-            const j2 = JSON.stringify(s.trace);
-
-            expect(j2).toBe(j2);
+            const j2 = s.trace.dumpString();
+            expect(j2).toBe(j1);
         }
     }));
 });

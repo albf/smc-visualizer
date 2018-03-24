@@ -359,7 +359,7 @@ export class Trace {
                 this.nodes.get(r).destinations = this.nodes.get(r).destinations.filter((d) => d != t);
             });
             this.nodes.get(t).destinations.forEach((r) => {
-                this.nodes.get(r).origins = this.nodes.get(r).origins.filter((d) => { d != t });
+                this.nodes.get(r).origins = this.nodes.get(r).origins.filter((d) => d != t);
             });
             this.nodes.delete(t);
 
@@ -546,5 +546,64 @@ export class Trace {
                 change: null
             });
         });
+    }
+
+    private dumpNodeString(k: number, v: TraceNode, fn: (a: any, b: any) => number) {
+        let dst = v.destinations == null ? [] : v.destinations;
+        let ori = v.origins == null ? [] : v.origins;
+
+        return "k " + k + " - v " +
+            "{ code : " + v.code + " | destinations: [ " + dst.slice().sort(fn) +
+            " | origins: " + ori.slice().sort(fn) + " }"
+    }
+
+    // Used to debug and assertions. Maps and even array can be very problematic
+    // with JSON functions. Some cases we just want a readable and comparable string.
+    dumpString(): string {
+        const fn = (a, b) => a - b;
+        let str = "counter: " + this.counter + "\n";
+
+        str += "increments: " + "\n";
+        let increments = [];
+        this.increments.forEach((v, k) => {
+            if (v.additions != null) {
+                let inc = "  inck: " + k + " - v : [";
+                v.additions.forEach((v, k) => {
+                    inc += "\n    " + this.dumpNodeString(v.index, v.raw, fn);
+                });
+                inc += " ]"
+                increments.push(inc);
+            }
+        });
+        str += increments.join("\n");
+
+        str += "\n\nmodifications: ";
+        this.modifications.forEach((v, k) => {
+            let mod = "  modk: " + k + "\n";
+            mod += "    type: " + v.type + "\n";
+            mod += "    causers: " + v.causers.slice().sort(fn) + "\n";
+            mod += "    targets: " + v.targets.slice().sort(fn) + "\n";
+
+            if (v.change != null) {
+                mod += "    changes: \n";
+                let changes = [];
+
+                v.change.forEach((k, v) => {
+                    changes.push("      " + this.dumpNodeString(k.index, k.raw, fn));
+                });
+                mod += changes.join("\n");
+            }
+            str += "\n" + mod;
+        })
+
+        str += "\n\nnodes: " + "\n";
+        let nodes = [];
+        this.nodes.forEach((v, k) => {
+            nodes.push("  " + this.dumpNodeString(k, v, fn));
+        });
+        nodes.sort();
+        str += nodes.join("\n");
+
+        return str;
     }
 }
