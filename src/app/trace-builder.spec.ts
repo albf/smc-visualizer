@@ -84,7 +84,7 @@ describe('TraceBuilder', () => {
             .createTraceModificationNode(12, "f-2", [], [1])
             .appendTraceModification(TraceModificationType.split, [2], [3])
 
-            .createTraceModificationNode(13, "joined code", [2], [0])
+            .createTraceModificationNode(13, "joined code", [2], [])
             .appendTraceModification(TraceModificationType.join, [0, 0], [11, 12]);
 
         expect(() => { t.build() }).not.toThrow();
@@ -95,5 +95,13 @@ describe('TraceBuilder', () => {
             .createTraceModificationNode(5, "k", [999], [])
             .appendTraceModification(TraceModificationType.add, [0], [1]);
         expect(() => { t.build() }).toThrowError(new RegExp("bad destination"));
+    }));
+
+    it('should throw if a join has a origin', async(() => {
+        const t = initialTrace()
+            .createTraceModificationNode(13, "joined code", [3], [0])
+            .appendTraceModification(TraceModificationType.join, [0, 0], [1, 2]);
+
+        expect(() => { t.build() }).toThrowError(new RegExp("empty origin"));
     }));
 });

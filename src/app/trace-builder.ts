@@ -83,6 +83,10 @@ export class TraceBuilder {
             (traceModification.change[0].raw.code == null)) {
 
             str = "requires exactly one new code";
+        } else if (traceModification.change[0].raw.origins != null &&
+            traceModification.change[0].raw.origins.length > 0) {
+
+            str = "requires empty origin for joined node";
         }
 
         if (str != null) {
