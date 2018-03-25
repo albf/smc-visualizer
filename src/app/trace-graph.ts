@@ -1,6 +1,4 @@
 import * as jQuery from 'jquery';
-import * as _ from 'lodash';
-import * as $ from 'backbone';
 import * as joint from 'jointjs';
 import { Trace, TraceNode } from './trace';
 

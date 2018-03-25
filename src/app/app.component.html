@@ -3,13 +3,15 @@
     <!-- First panel [ ... [] [] []] -->
     <div class="row">
         <div class="col-xl-12 text-right top-bar">
-            <button data-toggle="tooltip" data-placement="bottom" title="Samples" type="button" class="btn btn-danger" (click)="showSamplesModal(content);">
+            <button data-toggle="tooltip" data-placement="top" title="Samples" type="button" class="btn btn-danger" (click)="showSamplesModal(content);">
                 <i class="fa fa-file" aria-hidden="true"></i> Samples</button>
-            <button data-toggle="tooltip" data-placement="bottom" title="Open trace" type="button" class="btn btn-primary" (click)="loadTraceFile();">
-                <i class="fa fa-folder-open" aria-hidden="true"></i> Open trace</button>
-            <button data-toggle="tooltip" data-placement="bottom" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
+            <label for="file" title="Open trace" class="btn btn-primary" style="vertical-align: top">
+                <i class="fa fa-folder-open"></i> Open Trace
+            </label>
+            <input id="file" type="file" (change)="loadTraceFile($event.target.files)" />
+            <button data-toggle="tooltip" data-placement="top" title="Export to image" type="button" class="btn btn-primary" (click)="rasterize();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to image</button>
-            <button data-toggle="tooltip" data-placement="bottom" title="Export to SVG" type="button" class="btn btn-primary" (click)="rasterizeSVG();">
+            <button data-toggle="tooltip" data-placement="top" title="Export to SVG" type="button" class="btn btn-primary" (click)="rasterizeSVG();">
                 <i class="fa fa-download" aria-hidden="true"></i> Export to SVG</button>
         </div>
     </div>
@@ -88,7 +90,7 @@
 
 
         </div>
-        <div id="paper-container" class="col">
+        <div dragScroll id="paper-container" class="col">
             <div id="paper"></div>
         </div>
     </div>
@@ -103,9 +105,9 @@
         </div>
         <div class="modal-body">
             <ul class="modal-samples-list">
-                <li *ngFor="let summarizedSample of summarizedSamples; let i = index" (click)="selectSample(i); d('Cross click')">
-                    <strong>{{ summarizedSample.name }}</strong>
-                    {{ summarizedSample.description }}
+                <li *ngFor="let sample of traceSamples.samples; let i = index" (click)="selectSample(i); d('Cross click')">
+                    <strong>{{ sample.name }}</strong>
+                    {{ sample.description }}
                 </li>
             </ul>
         </div>

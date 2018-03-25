@@ -21,6 +21,11 @@
         border-radius: 0.4rem;
         overflow: scroll;
         max-height: 440px;
+
+        cursor: grab;
+        cursor : -o-grab;
+        cursor : -moz-grab;
+        cursor : -webkit-grab;
     }
 
     #paper {
@@ -45,4 +50,8 @@
 
     .modal-samples-list li strong {
         display: block;
+    }
+
+    input[type="file"] {
+        display: none;
     }

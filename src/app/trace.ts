@@ -37,11 +37,8 @@ export interface TraceIncrement {
 export class Trace {
     counter: number;
     nodes: Map<number, TraceNode>;                  // The graph, represented using a map
-    increments: TraceIncrement[];                  // Increments are always a pack of additions
+    increments: TraceIncrement[];                   // Increments are always a pack of additions
     modifications: TraceModification[];
-
-    private traceGraphChanges: TraceGraphChange[];  // Used by the builder
-    private traceIncrement: TraceIncrement;         // Used by the builder
 
     peekModificationNodes: Map<number, TraceNode>;  // Small view of the next modification
     peekIncrementNodes: Map<number, TraceNode>;     // SMall view of the next increment
@@ -55,18 +52,9 @@ export class Trace {
 
         this.increments = [];
         this.undoModifications = [];
-
-        this.traceGraphChanges = [];
-        this.traceIncrement = { additions: [] };
     }
 
-    appendNode(index: number, code: string, destinations: number[]): Trace {
-        const tn = this.createNode(code, destinations, null);
-        this.nodes.set(index, tn);
-        return this;
-    }
-
-    private createNode(code: string, destinations: number[], origins: number[]): TraceNode {
+    createNode(code: string, destinations: number[], origins: number[]): TraceNode {
         let tn = {
             code: code,
             destinations: destinations
@@ -77,66 +65,6 @@ export class Trace {
         return tn;
     }
 
-    createTraceModificationNode(index: number, code: string, destinations: number[], origins: number[]): Trace {
-        let tn = {
-            code: code,
-            destinations: destinations,
-            origins: origins
-        }
-        this.traceGraphChanges.push({
-            raw: tn,
-            index: index
-        });
-        return this;
-    }
-
-    appendTraceModification(type: TraceModificationType, causers: number[], targets: number[]): Trace {
-        let modification = {
-            type: type,
-            causers: causers,
-            targets: targets,
-            change: null
-        }
-        if (this.traceGraphChanges.length > 0) {
-            modification.change = this.traceGraphChanges;
-            this.traceGraphChanges = [];
-        }
-        this.modifications.push(modification);
-        return this;
-    }
-
-    createIncrementNode(index: number, code: string, destinations: number[], origins: number[]): Trace {
-        let tn = {
-            code: code,
-            destinations: destinations,
-            origins: origins
-        }
-        this.traceIncrement.additions.push({
-            raw: tn,
-            index: index
-        });
-
-        return this;
-    }
-
-    appendIncrement(): Trace {
-        this.increments.push(this.traceIncrement);
-        this.traceIncrement = { additions: [] };
-
-        return this;
-    }
-
-    build(): Trace {
-        // Assign inverses
-        this.nodes.forEach((value, key) => { this.nodes.get(key).origins = []; });
-        this.nodes.forEach((value, origin) => {
-            value.destinations.forEach(destination => {
-                this.nodes.get(destination).origins.push(origin);
-            });
-        });
-        return this;
-    }
-
     private hasSameLength(a1: any[], a2: any[]): boolean {
         if (a1.length == a2.length) {
             return true;
@@ -145,7 +73,7 @@ export class Trace {
         return false;
     }
 
-    private hasNode(n: number, expected: boolean): boolean {
+    hasNode(n: number, expected: boolean): boolean {
         if (this.nodes.has(n)) {
             if (expected !== null && !expected) console.log("Unexpected node: " + n);
             return true;
@@ -431,7 +359,7 @@ export class Trace {
                 this.nodes.get(r).destinations = this.nodes.get(r).destinations.filter((d) => d != t);
             });
             this.nodes.get(t).destinations.forEach((r) => {
-                this.nodes.get(r).origins = this.nodes.get(r).origins.filter((d) => { d != t });
+                this.nodes.get(r).origins = this.nodes.get(r).origins.filter((d) => d != t);
             });
             this.nodes.delete(t);
 
@@ -468,71 +396,42 @@ export class Trace {
         })
     }
 
-    private isJoinValid(traceModification: TraceModification): boolean {
-        if (traceModification.targets.length != 2) {
-            console.log("Error: join should have exactly two targets");
-            return false;
-        } else if ((traceModification.change.length != 1) ||
-            (traceModification.change[0].raw.code == null)) {
-
-            console.log("Error: join requires exactly one new code");
-            return false;
-        }
-
-        return true;
-    }
-
     private applyJoin(traceModification: TraceModification): void {
-        if (!this.isJoinValid(traceModification)) {
-            return;
-        }
-
         const t0 = traceModification.targets[0];
         const t1 = traceModification.targets[1];
 
-        if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
-
         const node0 = this.nodes.get(t0);
         const node1 = this.nodes.get(t1);
-        const origins = [];
-        const isOriginsEmpty = traceModification.change[0].raw.origins == null
-            || traceModification.change[0].raw.origins.length == 0;
 
-        if (isOriginsEmpty) {
-            // Add origins from previous nodes
-            node0.origins.concat(node1.origins).forEach((r) => {
-                if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
-                    origins.push(r);
-                }
-            })
-        }
+        const originsNode0 = node0.origins != null ? node0.origins : [];
+        const originsNode1 = node1.origins != null ? node1.origins : [];
+        const origins = [];
+
+        // Add origins from previous nodes
+        originsNode0.concat(originsNode1).forEach((r) => {
+            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                origins.push(r);
+            }
+        })
 
         // Remove node1 and node2
         this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
         // Adds the new node. Add requires origins to be set
-        if (isOriginsEmpty) {
+        if (origins.length > 0) {
             traceModification.change[0].raw.origins = origins;
         }
         this.applyAdd(traceModification);
-        if (isOriginsEmpty) {
+        if (origins.length > 0) {
             traceModification.change[0].raw.origins = null;;
         }
-
-        // TODO: Check for orphans?
     }
 
     private peekJoin(traceModification: TraceModification): void {
-        if (!this.isJoinValid(traceModification)) {
-            return;
-        }
-
         this.peekModificationNodes.set(0, this.createNode("Join", [1, 2], null));
 
         let t0 = traceModification.targets[0];
         let t1 = traceModification.targets[1];
-
-        if (!this.hasNode(t0, true) || !this.hasNode(t1, true)) return;
 
         let node0 = this.nodes.get(t0);
         let node1 = this.nodes.get(t1);
@@ -563,45 +462,19 @@ export class Trace {
         })
     }
 
-    private isSplitValid(traceModification: TraceModification): boolean {
-        if (traceModification.targets.length != 1) {
-            console.log("Error: splits should have exactly one target");
-            return false;
-        } else if (traceModification.change.length != 2) {
-            console.log("Error: join requires new code");
-            return false;
-        }
-        return true;
-    }
-
     private applySplit(traceModification: TraceModification): void {
-        if (!this.isSplitValid(traceModification)) {
-            return;
-        }
-
-        let t0 = traceModification.targets[0];
-        let change = traceModification.change;
-
-        if (this.hasNode(change[0].index, false) || this.hasNode(change[1].index, false)) {
-            console.log("Error: split new nodes should be new values");
-        }
-
         // Remove t0
-        this.applyRemove({ type: TraceModificationType.remove, targets: [t0] });
+        this.applyRemove({ type: TraceModificationType.remove, targets: [traceModification.targets[0]] });
 
         // Add c0 and c1
         this.applyAdd({
             type: TraceModificationType.add,
-            targets: [t0, t0],
-            change: change
+            targets: [],
+            change: traceModification.change
         });
     }
 
     private peekSplit(traceModification: TraceModification): void {
-        if (!this.isSplitValid(traceModification)) {
-            return;
-        }
-
         this.peekModificationNodes.set(0, this.createNode("split", [1], null));
 
         let change = traceModification.change;
@@ -673,5 +546,64 @@ export class Trace {
                 change: null
             });
         });
+    }
+
+    private dumpNodeString(k: number, v: TraceNode, fn: (a: any, b: any) => number) {
+        let dst = v.destinations == null ? [] : v.destinations;
+        let ori = v.origins == null ? [] : v.origins;
+
+        return "k " + k + " - v " +
+            "{ code : " + v.code + " | destinations: [ " + dst.slice().sort(fn) +
+            " | origins: " + ori.slice().sort(fn) + " }"
+    }
+
+    // Used to debug and assertions. Maps and even array can be very problematic
+    // with JSON functions. Some cases we just want a readable and comparable string.
+    dumpString(): string {
+        const fn = (a, b) => a - b;
+        let str = "counter: " + this.counter + "\n";
+
+        str += "increments: " + "\n";
+        let increments = [];
+        this.increments.forEach((v, k) => {
+            if (v.additions != null) {
+                let inc = "  inck: " + k + " - v : [";
+                v.additions.forEach((v, k) => {
+                    inc += "\n    " + this.dumpNodeString(v.index, v.raw, fn);
+                });
+                inc += " ]"
+                increments.push(inc);
+            }
+        });
+        str += increments.join("\n");
+
+        str += "\n\nmodifications: ";
+        this.modifications.forEach((v, k) => {
+            let mod = "  modk: " + k + "\n";
+            mod += "    type: " + v.type + "\n";
+            mod += "    causers: " + v.causers.slice().sort(fn) + "\n";
+            mod += "    targets: " + v.targets.slice().sort(fn) + "\n";
+
+            if (v.change != null) {
+                mod += "    changes: \n";
+                let changes = [];
+
+                v.change.forEach((k, v) => {
+                    changes.push("      " + this.dumpNodeString(k.index, k.raw, fn));
+                });
+                mod += changes.join("\n");
+            }
+            str += "\n" + mod;
+        })
+
+        str += "\n\nnodes: " + "\n";
+        let nodes = [];
+        this.nodes.forEach((v, k) => {
+            nodes.push("  " + this.dumpNodeString(k, v, fn));
+        });
+        nodes.sort();
+        str += nodes.join("\n");
+
+        return str;
     }
 }

@@ -1,4 +1,5 @@
 import { Trace, TraceModificationType } from "./trace";
+import { TraceBuilder } from "./trace-builder";
 
 export interface TraceSample {
     name: string,
@@ -22,7 +23,7 @@ export class TraceSamples {
         this.samples.push({
             name: "Simple graph",
             description: "Small graph showing all supported operations",
-            trace: new Trace()
+            trace: new TraceBuilder()
                 .appendNode(0, "a", [1, 3, 4, 5])
                 .appendNode(1, "b", [2, 3])
                 .appendNode(2, "c", [3])
@@ -72,7 +73,7 @@ jne .L2`
         this.samples.push({
             name: "Small x86",
             description: "Small x86 random instructions",
-            trace: new Trace()
+            trace: new TraceBuilder()
                 .appendNode(0, 'start', [1])
                 .appendNode(1, code, [2, 3])
                 .appendNode(2, code, [])
