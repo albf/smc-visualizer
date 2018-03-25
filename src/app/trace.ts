@@ -245,11 +245,16 @@ export class Trace {
                 this.nodes.get(t).code = traceModification.change[i].raw.code;
             }
             if (changeNode.destinations != null) {
+                // Remove everyone I'm not an origin anymore and add myself
+                // as a origin to my new destinations. Also update my list.
                 node.destinations.forEach((v) => {
-                    node.origins.filter(item => item != t);
+                    const nv = this.nodes.get(v);
+                    nv.origins = nv.origins.filter(item => item != t);
                 });
-                let dst = JSON.parse(JSON.stringify(changeNode.destinations));
-                this.nodes.get(t).destinations = dst;
+                node.destinations = JSON.parse(JSON.stringify(changeNode.destinations));
+                node.destinations.forEach((v) => {
+                    this.nodes.get(v).origins.push(t);
+                });
             }
         });
     }
@@ -553,7 +558,7 @@ export class Trace {
         let ori = v.origins == null ? [] : v.origins;
 
         return "k " + k + " - v " +
-            "{ code : " + v.code + " | destinations: [ " + dst.slice().sort(fn) +
+            "{ code : " + v.code + " | destinations: " + dst.slice().sort(fn) +
             " | origins: " + ori.slice().sort(fn) + " }"
     }
 
