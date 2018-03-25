@@ -84,9 +84,16 @@ describe('TraceBuilder', () => {
             .createTraceModificationNode(12, "f-2", [], [1])
             .appendTraceModification(TraceModificationType.split, [2], [3])
 
-            .createTraceModificationNode(13, "joined code", [3], [])
+            .createTraceModificationNode(13, "joined code", [2], [0])
             .appendTraceModification(TraceModificationType.join, [0, 0], [11, 12]);
 
         expect(() => { t.build() }).not.toThrow();
+    }));
+
+    it('should throw if uses a unknown destination', async(() => {
+        const t = initialTrace()
+            .createTraceModificationNode(5, "k", [999], [])
+            .appendTraceModification(TraceModificationType.add, [0], [1]);
+        expect(() => { t.build() }).toThrowError(new RegExp("bad destination"));
     }));
 });
