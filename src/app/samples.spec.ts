@@ -7,6 +7,18 @@ describe('TraceSamples', () => {
         const ts = new TraceSamples();
     }));
 
+    it('should have all fields correctly initialized', async(() => {
+        const ts = new TraceSamples();
+        for (let s of ts.samples) {
+            expect(s.description).toBeDefined();
+            expect(s.description).not.toBe("");
+            expect(s.name).toBeDefined();
+            expect(s.name).not.toBe("");
+            expect(s.trace).toBeDefined();
+            expect(s.trace.nodes).toBeDefined();
+        }
+    }));
+
     it('should advance and back time without modifying or crashing on all', async(() => {
         const ts = new TraceSamples();
 

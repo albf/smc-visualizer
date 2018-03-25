@@ -34,7 +34,7 @@ export class TraceBuilder {
         if (!nodes.has(elem)) {
             throw new SyntaxError(what + " of element " + elem + " completely unknown at index: " + index);
         } else if (!nodes.get(elem)) {
-            throw new SyntaxError(what + " of element " + elem + " current unknown at index: " + index);
+            throw new SyntaxError(what + " of element " + elem + " currently unknown at index: " + index);
         }
     }
 
@@ -43,15 +43,15 @@ export class TraceBuilder {
         nodes.set(elem, false);
     }
 
-    private validateSplit(traceModification: TraceModification, index: number): void {
+    private validateSplit(nodes: Map<number, boolean>, traceModification: TraceModification, index: number): void {
         let str: string = null;
 
         if (traceModification.targets.length != 1) {
-            str = "should have exactly one target at index";
+            str = "should have exactly one target";
         } else if (traceModification.change.length != 2) {
-            str = "requires new code at index";
-        } else if (this.trace.hasNode(traceModification.change[0].index, false)
-            || this.trace.hasNode(traceModification.change[1].index, false)) {
+            str = "requires new code";
+        } else if (nodes.has(traceModification.change[0].index)
+            || nodes.has(traceModification.change[1].index)) {
 
             str = "new nodes should be new values";
         }
@@ -61,7 +61,7 @@ export class TraceBuilder {
         }
     }
 
-    private validateJoin(traceModification: TraceModification, index: number): void {
+    private validateJoin(nodes: Map<number, boolean>, traceModification: TraceModification, index: number): void {
         let str: string = null;
 
         if (traceModification.targets.length != 2) {
@@ -70,14 +70,14 @@ export class TraceBuilder {
             (traceModification.change[0].raw.code == null)) {
 
             str = "requires exactly one new code";
-        } else if (!this.trace.hasNode(traceModification.targets[0], true)
-            || !this.trace.hasNode(traceModification.targets[1], true)) {
-
-            str = "join expects both targets to exist";
         }
+
         if (str != null) {
             throw new SyntaxError("Join Error: " + str + " at index: " + index);
         }
+
+        this.validateExistNode(nodes, traceModification.targets[0], "Split/Removal", index);
+        this.validateExistNode(nodes, traceModification.targets[1], "Split/Removal", index);
     }
 
     validate() {
@@ -108,19 +108,19 @@ export class TraceBuilder {
                 }
                 case TraceModificationType.modify: {
                     mod.targets.forEach(t => {
-                        this.validateExistNode(currentNodes, t, "Modification--", i);
+                        this.validateExistNode(currentNodes, t, "Modification", i);
                     });
                     break;
                 }
                 case TraceModificationType.join: {
-                    this.validateJoin(mod, i);
+                    this.validateJoin(currentNodes, mod, i);
                     this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
                     this.validateRemoveNode(currentNodes, mod.targets[1], "Join/Removal", i);
                     this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
                     break;
                 }
                 case TraceModificationType.split: {
-                    this.validateSplit(mod, i);
+                    this.validateSplit(currentNodes, mod, i);
                     this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
                     this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
                     this.validateAddNode(currentNodes, mod.change[1].index, "Join/Addition", i);
@@ -132,15 +132,18 @@ export class TraceBuilder {
             }
 
             // Check if not incrementing some node already used.
-            if (this.increments.length >= i) {
+            if (this.increments.length > i) {
                 this.increments[i].additions.forEach(tgc => {
-                    this.validateAddNode(currentNodes, tgc.index, "Modification/Addition", i);
+                    this.validateAddNode(currentNodes, tgc.index, "Increments/Addition", i);
                 });
             }
         }
     }
 
     appendNode(index: number, code: string, destinations: number[]): TraceBuilder {
+        if (this.nodes.has(index)) {
+            throw new SyntaxError("Node append of element " + index + " already used.");
+        }
         const tn = this.trace.createNode(code, destinations, null);
         this.nodes.set(index, tn);
         return this;
