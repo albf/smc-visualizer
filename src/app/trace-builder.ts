@@ -175,6 +175,14 @@ export class TraceBuilder {
         return this;
     }
 
+    updateDestination(index: number, destination: number[]): TraceBuilder {
+        if (!this.nodes.has(index)) {
+            throw new SyntaxError("Can't update element " + index + ", it doesn't exist.");
+        }
+        this.nodes.get(index).destinations = destination;
+        return this;
+    }
+
     createTraceModificationNode(index: number, code: string, destinations: number[], origins: number[]): TraceBuilder {
         let tn = {
             code: code,

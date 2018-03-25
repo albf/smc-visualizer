@@ -8,9 +8,12 @@ export interface TraceSample {
 }
 
 export class TraceSamples {
+    x86: X86Lipsum;
     samples: TraceSample[] = [];
 
     constructor() {
+        this.x86 = new X86Lipsum();
+
         this.sample1();
         this.sample2();
     }
@@ -62,23 +65,141 @@ export class TraceSamples {
     }
 
     private sample2() {
-        const code = `push rbp
-mov rbp, rsp
-sub rsp, 80
-mov QWORD PTR [rbp-72], rdi
-mov DWORD PTR [rbp-76], esi
-mov DWORD PTR [rbp-80], edx,
-jne .L2`
-
         this.samples.push({
             name: "Small x86",
             description: "Small x86 random instructions",
-            trace: new TraceBuilder()
-                .appendNode(0, 'start', [1])
-                .appendNode(1, code, [2, 3])
-                .appendNode(2, code, [])
-                .appendNode(3, code, [])
+            trace: this.x86.tree(3, 5, 8)
+                .createTraceModificationNode(8, this.x86.code(6), [], [1, 2])
+                .appendTraceModification(TraceModificationType.add, [7], [1])
+                .appendIncrement()
+
+                .createTraceModificationNode(3, this.x86.code(10), [1, 2], [])
+                .appendTraceModification(TraceModificationType.modify, [0], [3])
+                .appendIncrement()
+
+                .appendTraceModification(TraceModificationType.remove, [4], [1])
+                .appendIncrement()
+
+                .createTraceModificationNode(9, this.x86.code(6), [], [6])
+                .createTraceModificationNode(10, this.x86.code(5), [], [6])
+                .appendTraceModification(TraceModificationType.split, [7], [5])
+                .appendIncrement()
+
+                .createTraceModificationNode(11, this.x86.code(15), [6], [])
+                .appendTraceModification(TraceModificationType.join, [4, 4], [9, 10])
+                .appendIncrement()
+
                 .build()
         });
+    }
+}
+
+// Dummy class to generate useless X86 code
+class X86Lipsum {
+    private insCount: number;
+    private jumpCount: number;
+
+    // Internal tree structures
+    private minSize: number;
+    private currentSize: number;
+    private maxSize: number;
+    private count: number;
+
+    private instructions: string[] = ["push rbp"
+        , "mov rbp, rsp"
+        , "sub rsp, 80"
+        , "mov QWORD PTR [rbp-72], rdi"
+        , "shr ebx, cl"
+        , "mov eax, [ebx]"
+        , "lea edi, [ebx+4*esi]"
+        , "mov DWORD PTR [rbp-76], esi"
+        , "xor edx, edx"
+        , "sub eax, 216"
+        , "mov edx, [esi+4*ebx]"
+        , "push dword[esi+ebp+40]"
+        , "fld dword[esi+ebp+40]"
+        , "add dword[esi+edi],1"
+        , "movss [ebp+12],xmm0"
+        , "popl %ecx"
+        , "imul esi, edi, 25"
+        , "add eax, 10"
+        , "push eax"
+        , "mov DWORD PTR [rbp-80], edx"
+    ];
+
+    private jumps: string[] = ["jne .L2"
+        , "jeq loop"
+        , "jl label1"
+        , "jg .KC"
+        , "je .L4"
+    ]
+
+    constructor() {
+        this.insCount = -1;
+        this.jumpCount = -1;
+    }
+
+    private nextInstruction(): string {
+        this.insCount++;
+        if (this.insCount >= this.instructions.length) {
+            this.insCount = 0;
+        }
+        return this.instructions[this.insCount];
+    }
+
+    private nextJump(): string {
+        this.jumpCount++;
+        if (this.jumpCount >= this.jumps.length) {
+            this.jumpCount = 0;
+        }
+        return this.jumps[this.jumpCount];
+    }
+
+    code(size: number) {
+        if (size < 1) {
+            throw new Error("Unexpected size: " + size);
+        }
+        const code = [];
+        for (let i = 1; i < size; i++) {
+            code.push(this.nextInstruction());
+        }
+        code.push(this.nextJump());
+        return code.join("\n");
+    }
+
+    tree(height: number, minLen: number, maxLen: number): TraceBuilder {
+        if (minLen < 1 || maxLen < 1) {
+            throw new Error("Unexpected sizes: (" + minLen + ", " + maxLen + ")");
+        } else if (maxLen < minLen) {
+            throw new Error("Error: maxLen should be larger than minlen.");
+        }
+
+        this.minSize = minLen;
+        this.maxSize = maxLen;
+        this.currentSize = Math.floor((minLen + maxLen) / 2);
+        this.count = 1;
+
+        const tb = new TraceBuilder().appendNode(0, "start", []);
+        const dst = this.recursiveAppend(tb, height);
+        return tb.updateDestination(0, [dst]);
+    }
+
+    private size(): number {
+        this.currentSize++
+        if (this.currentSize > this.maxSize) this.currentSize = this.minSize;
+        return this.currentSize;
+    }
+
+    private recursiveAppend(tb: TraceBuilder, height: number): number {
+        if (height <= 1) {
+            const index = this.count++;
+            tb.appendNode(index, this.code(this.size()), []);
+            return index;
+        }
+        let dst1 = this.recursiveAppend(tb, height - 1);
+        let dst2 = this.recursiveAppend(tb, height - 1);
+        const index = this.count++;
+        tb.appendNode(index, this.code(this.size()), [dst1, dst2]);
+        return index;
     }
 }

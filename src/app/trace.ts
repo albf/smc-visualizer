@@ -428,7 +428,7 @@ export class Trace {
         }
         this.applyAdd(traceModification);
         if (origins.length > 0) {
-            traceModification.change[0].raw.origins = null;;
+            traceModification.change[0].raw.origins = [];
         }
     }
 
