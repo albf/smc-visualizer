@@ -1,27 +1,38 @@
 # SmcVisualizer
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.2.
+Web-based visualization tool for interpreting self modifying code (SMC) code, by providing a timeline for the control flow graph (CFG). A tracer and a conversion would be required to use it for real workloads. There are some samples as a proof-of-concept.
 
-## Development server
+## Building
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Running it is quite easy, there is nothing sneaky about it. You have two options:
 
-## Code scaffolding
+### Docker
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Requires a recent docker version (tested with Docker version 17.12.0-ce, build c97c6d6). To build, as usual:
 
-## Build
+```
+$ docker build . -t smc-vis
+```
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+To start:
 
-## Running unit tests
+```
+$ docker run -d -p 4200:80 smc-vis
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Just access localhost:4200 in your browser.
 
-## Running end-to-end tests
+### Local
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+Requires a recent node/npm installation (tested with node v9.2.0 and npm v5.5.1).
 
-## Further help
+```
+$ npm install
+$ npm start
+```
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+Since it's an Angular app, the CLI tool will watch for modified files.
+
+## Unit Tests
+
+Run `ng test` (watcher) or `npm start` (no watcher) to execute the unit tests via [Karma](https://karma-runner.github.io), using headless chrome.
