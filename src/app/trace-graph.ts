@@ -148,7 +148,7 @@ export class TraceGraph {
         const marginX = this.currentMarginX;
         const marginY = this.currentMarginY;
 
-        canvas.width = svg.style['bbox-width'] + marginX;
+        canvas.width = svg.style['bbox-width'] + marginX * 2;
         canvas.height = svg.style['bbox-height'] + marginY * 2;
 
         const ctx = canvas.getContext("2d");
@@ -166,15 +166,18 @@ export class TraceGraph {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Draw the whole graph into the canvas.
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height) //, 0, 0, 0, 0);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
 
             // Use a second canvas to properly cut the data.
             // Using only one would be ideal, but it's now working in Chrome.
             const cutCanvas = document.createElement('canvas');
             const cutCtx = cutCanvas.getContext("2d");
 
-            cutCanvas.width = svg.style['bbox-width'];
-            cutCanvas.height = svg.style['bbox-height'];
+            // Adds +2 for width as a safety measurement.
+            // For the height, 2*marginY should be the same and
+            // will serve as a safety for heigh dimension.
+            cutCanvas.width = svg.style['bbox-width'] + 2;
+            cutCanvas.height = svg.style['bbox-height'] + 2 * marginY;
 
             var data = ctx.getImageData(0, 0, cutCanvas.width, cutCanvas.height);
             cutCtx.putImageData(data, 0, 0);
