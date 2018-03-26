@@ -26,6 +26,7 @@ export class AppComponent {
     private viewSelected: "normal" | "modification" | "increment";
 
     selected: number[];     // Used to track selected nodes
+    masked: boolean;        // Indicate if it's under a mask due a selection
 
     constructor(modalService: NgbModal) {
         this.modalService = modalService;
@@ -49,12 +50,13 @@ export class AppComponent {
                     if (this.selected.length == 2) {
                         this.trace.updateSelection(this.selected);
                         this.selected = [];
+                        this.masked = true;
                         this.drawTrace();
                     }
                 }
             });
 
-
+        this.masked = false;
         this.traceSamples = new TraceSamples();
         this.drawSample(0);
     }
@@ -102,6 +104,12 @@ export class AppComponent {
 
     peekIncrementView() {
         this.viewSelected = "increment";
+        this.drawTrace();
+    }
+
+    cleanSelections() {
+        this.masked = false;
+        this.trace.cleanMask();
         this.drawTrace();
     }
 

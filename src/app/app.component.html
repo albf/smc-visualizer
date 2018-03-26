@@ -64,6 +64,10 @@
                             (click)="peekIncrementView();">
                             <i class="fa fa-plus-circle" aria-hidden="true"></i>
                         </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Clean Selections" [disabled]="!this.masked" type="button" class="btn btn-outline-primary"
+                            (click)="cleanSelections();">
+                            <i class="fa fa-eraser" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
             </div>
