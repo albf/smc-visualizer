@@ -44,6 +44,9 @@ export class Trace {
     peekIncrementNodes: Map<number, TraceNode>;         // SMall view of the next increment
     undoModifications: TraceModification[];             // Used for undo
 
+    selected: number[];                                 // Two elements selected for filtering
+    mask: Map<number, boolean>;                         // Structure to save nodes to show on selection
+
     fn: (a: any, b: any) => number = (a, b) => a - b;    // Function used to sort during dump functions
 
     constructor() {
@@ -106,9 +109,12 @@ export class Trace {
             this.createUndo(latestModification);
         }
 
-        // Lastly, apply the change and increment.
+        // Next, apply the change and increment.
         const ret = this.applyModification(latestModification);
         this.applyIncrement(latestIncrement);
+
+        // Lastly, create selection mask if needed
+        this.createMaskIfNeeded();
         return ret;
     }
 
@@ -127,7 +133,13 @@ export class Trace {
         this.counter--;
 
         this.undoIncrement(previousIncrement);
-        return this.applyModification(previousUndo);
+        const ret = this.applyModification(previousUndo);
+
+        if (ret) {
+            // Lastly, create selection mask if needed
+            this.createMaskIfNeeded();
+        }
+        return ret;
     }
 
     applyModification(traceModification: TraceModification): boolean {
@@ -553,6 +565,82 @@ export class Trace {
                 change: null
             });
         });
+    }
+
+    updateSelection(selected: number[]): void {
+        if (selected.length != 2) {
+            throw new Error("Expected two nodes selected");
+        }
+        this.selected = selected;
+        this.createMaskIfNeeded();
+    }
+
+    private createMaskIfNeeded() {
+        if (this.selected == null) {
+            return;
+        }
+
+        this.mask = new Map<number, boolean>();
+        const node0 = this.selected[0];
+        const node1 = this.selected[1];
+
+        // If some of the nodes doesn't exist (got removed for some reason)
+        // just assume it's impossible to get from node0 to node1.
+        if (!this.nodes.has(node0) || !this.nodes.has(node1)) {
+            return;
+        }
+
+        // Check both ways
+        this.findRelated(node0, node1, [node0], new Map<number, boolean>());
+        this.findRelated(node1, node0, [node1], new Map<number, boolean>());
+    }
+
+    private findRelated(current: number, destiny: number, related: number[], used: Map<number, boolean>) {
+        // Verify if the node was already checked.
+        if (used.has(current)) return;
+        used.set(current, true);
+
+        // Check if finally arrived at the destiny
+        // Or arrived at an already selected node
+        if (current == destiny || this.mask.has(current)) {
+            related.forEach(v => {
+                this.mask.set(v, true);
+            });
+            // Add the destiny, since it wasn't added in "related"
+            this.mask.set(destiny, true);
+            return;
+        }
+
+        // Haven't arrived yet, navigate throught destinations
+        this.nodes.get(current).destinations.forEach((v) => {
+            this.findRelated(v, destiny, related.concat(current), used);
+        });
+    }
+
+    // Apply a mask if currently have a mask.
+    maskIfAvailable(nodes: Map<number, TraceNode>): Map<number, TraceNode> {
+        // If no mask selected, just return the nodes
+        if (this.selected == null) {
+            return nodes;
+        }
+
+        // Otherwise, apply the mask/selection
+        const result = new Map<number, TraceNode>();
+        nodes.forEach((n, k) => {
+            if (this.mask.has(k)) {
+                result.set(k, {
+                    code: n.code,
+                    destinations: n.destinations.filter(k => this.mask.has(k)),
+                    origins: n.origins == null ? null : n.origins.filter(k => this.mask.has(k))
+                })
+            };
+        });
+        return result;
+    }
+
+    cleanMask() {
+        this.mask = null;
+        this.selected = null;
     }
 
     private dumpNodeString(k: number, v: TraceNode) {
