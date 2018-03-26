@@ -24,6 +24,8 @@ export class TraceGraph {
     currentMarginX: number;
     currentMarginY: number;
 
+    translationMap: Map<string, number>;    // Translate cellView ids to node ids.
+
     constructor() {
         const element = jQuery("#paper");
         const container = jQuery("#paper-container");
@@ -37,7 +39,8 @@ export class TraceGraph {
             width: this.containerWidth,
             height: this.containerHeight,
             model: this.graph,
-            gridSize: 1
+            gridSize: 1,
+            interactive: false
         });
     }
 
@@ -65,6 +68,9 @@ export class TraceGraph {
         // Draw twice: first one will just allow us to get the relative position
         // for the startNode. With such values, we can correctly calculate margins
         joint.layout.DirectedGraph.layout(this.graph, opts);
+
+        // If there is no startNode (empty graph) stop here
+        if (this.startNode == null) return;
 
         let position = this.startNode.get('position');
         let size = this.startNode.get('size');
@@ -255,11 +261,17 @@ export class TraceGraph {
         const graphElements = [];
         const nodesMap = new Map<number, joint.shapes.basic.Rect>();  // Needed to created links
 
+        // Reset node selection
+        this.translationMap = new Map<string, number>()
+
         // Frist create nodes
         nodes.forEach((n, k) => {
             const rect = this.createRect(n.code);
             graphElements.push(rect);
             nodesMap.set(k, rect);
+
+            // Save translation for later use, if needed.
+            this.translationMap.set(rect.id.toString(), k);
         });
 
         // Then, create edges - mandatory to do be after nodes
@@ -274,7 +286,11 @@ export class TraceGraph {
             specialEdges.start.forEach((v, i) => {
                 const startNode = nodesMap.get(specialEdges.start[i]);
                 const endNode = nodesMap.get(specialEdges.end[i]);
-                graphElements.push(this.createLink(startNode.id, endNode.id, 'red', true));
+
+                //  startNode and|or endNode can be null, some nodes could be selected.
+                if (startNode != null && endNode != null) {
+                    graphElements.push(this.createLink(startNode.id, endNode.id, 'red', true));
+                }
             });
         }
 
@@ -297,7 +313,7 @@ export class TraceGraph {
             }
         }
 
-        this.draw(trace.nodes, specialEdges);
+        this.draw(trace.maskIfAvailable(trace.nodes), specialEdges);
     }
 
     drawModificationPeek(trace: Trace): void {
@@ -307,7 +323,13 @@ export class TraceGraph {
 
     drawIncrementPeek(trace: Trace): void {
         trace.createIncrementPeek();
+
+        // Can't apply mask to increments. They don't exist currently,
         this.draw(trace.peekIncrementNodes);
+    }
+
+    translateRectIdToNodeId(rectId: string): number {
+        return this.translationMap.get(rectId);
     }
 
     zoomIn(): void {

@@ -181,4 +181,25 @@ describe('Trace', () => {
 
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
     }));
+
+    it('should mask a simple graph correctly', async(() => {
+        const expected = "nodes:\n"
+            + "  k 0 - v { code : a | destinations: 1 | origins:  }\n"
+            + "  k 1 - v { code : b | destinations:  | origins: 0 }";
+
+        const t = initialTrace().build();
+        t.updateSelection([0, 1]);
+
+        expect(t.dumpStringNodes(t.maskIfAvailable(t.nodes))).toBe(expected);
+    }));
+
+    it('should ignore previous masks for a simple graph', async(() => {
+        const t = initialTrace().build();
+        const expected = t.dumpStringNodes(t.nodes);
+
+        t.updateSelection([0, 1]);
+        t.cleanMask();
+
+        expect(t.dumpStringNodes(t.maskIfAvailable(t.nodes))).toBe(expected);
+    }));
 });

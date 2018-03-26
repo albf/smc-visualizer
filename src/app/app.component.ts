@@ -16,7 +16,7 @@ import { TraceBuilder } from "./trace-builder";
 export class AppComponent {
     private title = 'SMC Visualizer';
 
-    private graph: TraceGraph;
+    private traceGraph: TraceGraph;
     private trace: Trace;
     private traceSamples: TraceSamples;
     private modalService: NgbModal;
@@ -25,28 +25,62 @@ export class AppComponent {
     maxTime = 0;
     private viewSelected: "normal" | "modification" | "increment";
 
+    selected: number[];     // Used to track selected nodes
+    masked: boolean;        // Indicate if it's under a mask due a selection
+
+    playing: boolean;
+    playExit: boolean;
+
     constructor(modalService: NgbModal) {
         this.modalService = modalService;
     }
 
     ngOnInit() {
-        this.graph = new TraceGraph();
+        this.traceGraph = new TraceGraph();
+
+        // pointerClick handler needs to be here, as it needs to have access to
+        // both screen elements and trace elements. traceGraph shouldn't be aware of such structures.
+        this.traceGraph.paper.on('cell:pointerclick',
+            (cellView, evt, x, y) => {
+                const nodeId = this.traceGraph.translateRectIdToNodeId(cellView.model.id.toString());
+
+                if (this.selected.indexOf(nodeId) >= 0) {
+                    this.selected = this.selected.filter(x => x != nodeId);
+                    const cell = this.traceGraph.graph.getCell(cellView.model.id).attr('rect/fill', 'white');
+                } else {
+                    const cell = this.traceGraph.graph.getCell(cellView.model.id).attr('rect/fill', 'yellow');
+                    this.selected.push(nodeId);
+                    if (this.selected.length == 2) {
+                        this.trace.updateSelection(this.selected);
+                        this.selected = [];
+                        this.masked = true;
+                        this.drawTrace();
+                    }
+                }
+            });
+
+        this.masked = false;
+        this.playing = false;
+        this.playExit = true;
         this.traceSamples = new TraceSamples();
         this.drawSample(0);
     }
 
-    drawTrace(trace: Trace) {
+    drawTrace() {
+        // Solve sselection
+        this.selected = [];
+
         switch (this.viewSelected) {
             case "normal": {
-                this.graph.drawTrace(this.trace);
+                this.traceGraph.drawTrace(this.trace);
                 break;
             }
             case "modification": {
-                this.graph.drawModificationPeek(this.trace);
+                this.traceGraph.drawModificationPeek(this.trace);
                 break;
             }
             case "increment": {
-                this.graph.drawIncrementPeek(this.trace);
+                this.traceGraph.drawIncrementPeek(this.trace);
                 break;
             }
         }
@@ -65,64 +99,117 @@ export class AppComponent {
 
     normalView() {
         this.viewSelected = "normal";
-        this.drawTrace(this.trace);
+        this.drawTrace();
     }
 
     peekModificationView() {
         this.viewSelected = "modification";
-        this.drawTrace(this.trace);
+        this.drawTrace();
     }
 
     peekIncrementView() {
         this.viewSelected = "increment";
-        this.drawTrace(this.trace);
+        this.drawTrace();
     }
 
-    advanceTime() {
+    cleanSelections() {
+        this.masked = false;
+        this.trace.cleanMask();
+        this.drawTrace();
+    }
+
+    advanceTime(ignoreStop: boolean = false): boolean {
+        if (!ignoreStop) {
+            this.stopIfPlaying();
+        }
         if (this.trace.applyNext()) {
             this.currentTime++;
-            this.drawTrace(this.trace);
+            this.drawTrace();
+            return true;
         }
+        return false;
     }
 
     advanceToEnd() {
+        this.stopIfPlaying();
         while (this.trace.applyNext()) {
             this.currentTime++;
         }
-        this.drawTrace(this.trace);
+        this.drawTrace();
     }
 
     backTime() {
+        this.stopIfPlaying();
         if (this.trace.applyUndo()) {
             this.currentTime--;
-            this.drawTrace(this.trace);
+            this.drawTrace();
         }
     }
 
     backToStart() {
+        this.stopIfPlaying();
         while (this.trace.applyUndo()) {
             this.currentTime--;
         }
-        this.drawTrace(this.trace);
+        this.drawTrace();
     }
 
     play() {
+        // If received a play request and is already playing, it's a stop.
+        if (this.stopIfPlaying()) {
+            return;
+        }
+
+        console.log("received play request. playExit: " + this.playExit);
+        this.playing = true;
+        // It's possible there is a waiting thread, check if that's the case
+        if (!this.playExit) {
+            return;
+        }
+        console.log("thread has exit");
+
+        const fn = (time: number) => {
+            if (this.playing && this.advanceTime(true)) {
+                setTimeout(fn, 1000);
+            } else {
+                this.playExit = true;
+                console.log("exiting. playExit: " + this.playExit);
+            }
+        }
+
+        this.playExit = false;
+        setTimeout(fn, 1000);
+
+        // Update play button
+        const button = document.getElementById("play-button-text");
+        button.setAttribute("class", "fa fa-stop");
+    }
+
+    stopIfPlaying(): boolean {
+        if (!this.playing) {
+            return false;
+        }
+
+        this.playing = false;
+        const button = document.getElementById("play-button-text");
+        button.setAttribute("class", "fa fa-play");
+        return true;
     }
 
     zoomIn() {
-        this.graph.zoomIn()
+        this.traceGraph.zoomIn()
     }
 
     zoomOut() {
-        this.graph.zoomOut()
+        this.traceGraph.zoomOut()
     }
 
     expandCanvas() {
-        this.graph.expandPaper();
+        this.traceGraph.expandPaper();
     }
 
     compressCanvas() {
-        this.graph.compressPaper();
+        this.traceGraph.compressPaper();
     }
 
     showSamplesModal(content) {
@@ -134,11 +221,11 @@ export class AppComponent {
     }
 
     rasterize() {
-        this.graph.saveToPNG();
+        this.traceGraph.saveToPNG();
     }
 
     rasterizeSVG() {
-        this.graph.saveSVG();
+        this.traceGraph.saveSVG();
     }
 
     loadTraceFile(files: FileList) {

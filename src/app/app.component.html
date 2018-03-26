@@ -33,8 +33,9 @@
                             class="btn btn-outline-primary" (click)="advanceTime();">
                             <i class="fa fa-step-forward" aria-hidden="true"></i>
                         </button>
-                        <button data-toggle="tooltip" data-placement="bottom" title="Play" type="button" class="btn btn-outline-secondary" (click)="play()">
-                            <i class="fa fa-play" aria-hidden="true"></i>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Play" [disabled]="currentTime == maxTime" type="button" class="btn btn-outline-secondary"
+                            (click)="play()">
+                            <i class="fa fa-play" aria-hidden="true" id="play-button-text"></i>
                         </button>
                         <button data-toggle="tooltip" data-placement="bottom" title="Back to Start" [disabled]="currentTime == 0" type="button" class="btn btn-outline-primary"
                             (click)="backToStart();">
@@ -63,6 +64,10 @@
                         <button data-toggle="tooltip" data-placement="bottom" title="Peek Increment" type="button" class="btn btn-outline-primary"
                             (click)="peekIncrementView();">
                             <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                        </button>
+                        <button data-toggle="tooltip" data-placement="bottom" title="Clean Selections" [disabled]="!this.masked" type="button" class="btn btn-outline-primary"
+                            (click)="cleanSelections();">
+                            <i class="fa fa-eraser" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
