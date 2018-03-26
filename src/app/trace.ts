@@ -36,13 +36,15 @@ export interface TraceIncrement {
 
 export class Trace {
     counter: number;
-    nodes: Map<number, TraceNode>;                  // The graph, represented using a map
-    increments: TraceIncrement[];                   // Increments are always a pack of additions
+    nodes: Map<number, TraceNode>;                      // The graph, represented using a map
+    increments: TraceIncrement[];                       // Increments are always a pack of additions
     modifications: TraceModification[];
 
-    peekModificationNodes: Map<number, TraceNode>;  // Small view of the next modification
-    peekIncrementNodes: Map<number, TraceNode>;     // SMall view of the next increment
-    undoModifications: TraceModification[];         // Used for undo
+    peekModificationNodes: Map<number, TraceNode>;      // Small view of the next modification
+    peekIncrementNodes: Map<number, TraceNode>;         // SMall view of the next increment
+    undoModifications: TraceModification[];             // Used for undo
+
+    fn: (a: any, b: any) => number = (a, b) => a - b;    // Function used to sort during dump functions
 
     constructor() {
         this.counter = 0;
@@ -163,7 +165,7 @@ export class Trace {
     }
 
     createModificationPeek(): void {
-        this.peekModificationNodes = new Map<number, TraceNode>();
+        this.peekModificationNodes = new Map<number, TraceNode>();  // Erase previous loaded peek
         const traceModification = this.getLatestModification();
 
         if (traceModification == null) {
@@ -553,19 +555,31 @@ export class Trace {
         });
     }
 
-    private dumpNodeString(k: number, v: TraceNode, fn: (a: any, b: any) => number) {
+    private dumpNodeString(k: number, v: TraceNode) {
         let dst = v.destinations == null ? [] : v.destinations;
         let ori = v.origins == null ? [] : v.origins;
 
         return "k " + k + " - v " +
-            "{ code : " + v.code + " | destinations: " + dst.slice().sort(fn) +
-            " | origins: " + ori.slice().sort(fn) + " }"
+            "{ code : " + v.code + " | destinations: " + dst.slice().sort(this.fn) +
+            " | origins: " + ori.slice().sort(this.fn) + " }"
+    }
+
+    // Same as dumpStringAll, but only for the nodes and you should specify which.
+    // Can be used to dump and compare peek graphs using the same format.
+    dumpStringNodes(nodes: Map<number, TraceNode>): string {
+        let nodesString = [];
+        if (nodes != null) {
+            nodes.forEach((v, k) => {
+                nodesString.push("  " + this.dumpNodeString(k, v));
+            });
+        }
+        nodesString.sort();
+        return "nodes:\n" + nodesString.join("\n");
     }
 
     // Used to debug and assertions. Maps and even array can be very problematic
     // with JSON functions. Some cases we just want a readable and comparable string.
-    dumpString(): string {
-        const fn = (a, b) => a - b;
+    dumpStringAll(): string {
         let str = "counter: " + this.counter + "\n";
 
         str += "increments: " + "\n";
@@ -574,7 +588,7 @@ export class Trace {
             if (v.additions != null) {
                 let inc = "  inck: " + k + " - v : [";
                 v.additions.forEach((v, k) => {
-                    inc += "\n    " + this.dumpNodeString(v.index, v.raw, fn);
+                    inc += "\n    " + this.dumpNodeString(v.index, v.raw);
                 });
                 inc += " ]"
                 increments.push(inc);
@@ -586,28 +600,22 @@ export class Trace {
         this.modifications.forEach((v, k) => {
             let mod = "  modk: " + k + "\n";
             mod += "    type: " + v.type + "\n";
-            mod += "    causers: " + v.causers.slice().sort(fn) + "\n";
-            mod += "    targets: " + v.targets.slice().sort(fn) + "\n";
+            mod += "    causers: " + v.causers.slice().sort(this.fn) + "\n";
+            mod += "    targets: " + v.targets.slice().sort(this.fn) + "\n";
 
             if (v.change != null) {
                 mod += "    changes: \n";
                 let changes = [];
 
                 v.change.forEach((k, v) => {
-                    changes.push("      " + this.dumpNodeString(k.index, k.raw, fn));
+                    changes.push("      " + this.dumpNodeString(k.index, k.raw));
                 });
                 mod += changes.join("\n");
             }
             str += "\n" + mod;
         })
 
-        str += "\n\nnodes: " + "\n";
-        let nodes = [];
-        this.nodes.forEach((v, k) => {
-            nodes.push("  " + this.dumpNodeString(k, v, fn));
-        });
-        nodes.sort();
-        str += nodes.join("\n");
+        str += "\n\n" + this.dumpStringNodes(this.nodes);
 
         return str;
     }

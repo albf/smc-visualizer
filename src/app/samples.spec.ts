@@ -23,12 +23,12 @@ describe('TraceSamples', () => {
         const ts = new TraceSamples();
 
         for (let s of ts.samples) {
-            const j1 = s.trace.dumpString();
+            const j1 = s.trace.dumpStringAll();
 
             while (s.trace.applyNext());
             while (s.trace.applyUndo());
 
-            const j2 = s.trace.dumpString();
+            const j2 = s.trace.dumpStringAll();
             expect(j2).toBe(j1);
         }
     }));
