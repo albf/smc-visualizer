@@ -28,6 +28,9 @@ export class AppComponent {
     selected: number[];     // Used to track selected nodes
     masked: boolean;        // Indicate if it's under a mask due a selection
 
+    playing: boolean;
+    playExit: boolean;
+
     constructor(modalService: NgbModal) {
         this.modalService = modalService;
     }
@@ -57,6 +60,8 @@ export class AppComponent {
             });
 
         this.masked = false;
+        this.playing = false;
+        this.playExit = true;
         this.traceSamples = new TraceSamples();
         this.drawSample(0);
     }
@@ -113,14 +118,20 @@ export class AppComponent {
         this.drawTrace();
     }
 
-    advanceTime() {
+    advanceTime(ignoreStop: boolean = false): boolean {
+        if (!ignoreStop) {
+            this.stopIfPlaying();
+        }
         if (this.trace.applyNext()) {
             this.currentTime++;
             this.drawTrace();
+            return true;
         }
+        return false;
     }
 
     advanceToEnd() {
+        this.stopIfPlaying();
         while (this.trace.applyNext()) {
             this.currentTime++;
         }
@@ -128,6 +139,7 @@ export class AppComponent {
     }
 
     backTime() {
+        this.stopIfPlaying();
         if (this.trace.applyUndo()) {
             this.currentTime--;
             this.drawTrace();
@@ -135,6 +147,7 @@ export class AppComponent {
     }
 
     backToStart() {
+        this.stopIfPlaying();
         while (this.trace.applyUndo()) {
             this.currentTime--;
         }
@@ -142,6 +155,45 @@ export class AppComponent {
     }
 
     play() {
+        // If received a play request and is already playing, it's a stop.
+        if (this.stopIfPlaying()) {
+            return;
+        }
+
+        console.log("received play request. playExit: " + this.playExit);
+        this.playing = true;
+        // It's possible there is a waiting thread, check if that's the case
+        if (!this.playExit) {
+            return;
+        }
+        console.log("thread has exit");
+
+        const fn = (time: number) => {
+            if (this.playing && this.advanceTime(true)) {
+                setTimeout(fn, 1000);
+            } else {
+                this.playExit = true;
+                console.log("exiting. playExit: " + this.playExit);
+            }
+        }
+
+        this.playExit = false;
+        setTimeout(fn, 1000);
+
+        // Update play button
+        const button = document.getElementById("play-button-text");
+        button.setAttribute("class", "fa fa-stop");
+    }
+
+    stopIfPlaying(): boolean {
+        if (!this.playing) {
+            return false;
+        }
+
+        this.playing = false;
+        const button = document.getElementById("play-button-text");
+        button.setAttribute("class", "fa fa-play");
+        return true;
     }
 
     zoomIn() {
