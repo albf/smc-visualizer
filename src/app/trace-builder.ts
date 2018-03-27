@@ -254,14 +254,16 @@ export class TraceBuilder {
             console.log("Warning: Unexpected modifications undefined");
 
         } else {
-            this.modifications = parsed["modifications"];
+            this.trace.modifications = parsed["modifications"];
+            this.modifications = this.trace.modifications;
         }
 
         if (parsed["increments"] == undefined) {
             console.log("Warning: Unexpected increments undefined");
 
         } else {
-            this.increments = parsed["increments"];
+            this.trace.increments = parsed["increments"];
+            this.increments = this.trace.increments;
         }
 
         if (parsed["nodes"] == undefined) {
@@ -277,6 +279,22 @@ export class TraceBuilder {
         }
 
         return this.build();
+    }
+
+    toFileFormat(): string {
+        const trace = this.build();
+        let nodes = {};
+        let result = '{\n"nodes":';
+
+        trace.nodes.forEach((tn, k) => {
+            nodes[k.toString()] = tn;
+        });
+        result += JSON.stringify(nodes);
+        result += ',\n"modifications":' + JSON.stringify(trace.modifications);;
+        result += ',\n"increments":' + JSON.stringify(trace.increments);;
+
+        result += '\n}';
+        return result;
     }
 
     build(): Trace {
