@@ -71,9 +71,13 @@ export class TraceSamples {
             description: "Small x86 random instructions",
             trace: this.x86.tree(2, 3, 4)
                 .appendAdds(1)
+                .appendIncrements(0)
                 .appendModifies(1)
+                .appendIncrements(1)
                 .appendSplits(1)
+                .appendIncrements(0)
                 .appendJoins(1)
+                .appendIncrements(1)
                 .appendRemoves(1)
                 .build()
         });
@@ -108,7 +112,7 @@ export class X86Lipsum {
     private maxSize: number;
     private count: number;
 
-    private traceBuilder: TraceBuilder;
+    traceBuilder: TraceBuilder;
     private destinations: Map<number, number[]>;
     private addDestinations: number;
     private addOrigins: number;
@@ -222,8 +226,13 @@ export class X86Lipsum {
         return index;
     }
 
-    private safelyCreateModificationNode(index: number, destinations: number[], origins: number[]) {
-        this.traceBuilder.createTraceModificationNode(index, this.code(this.size()), destinations, origins);
+    private safelyCreateNode(index: number, destinations: number[], origins: number[], isIncrement: boolean = false) {
+        const code = this.code(this.size());
+        if (isIncrement) {
+            this.traceBuilder.createIncrementNode(index, code, destinations, origins);
+        } else {
+            this.traceBuilder.createTraceModificationNode(index, code, destinations, origins);
+        }
         this.destinations.set(index, destinations);
         origins.forEach((v2, i2) => {
             if (this.destinations.get(v2).indexOf(index) < 0) {
@@ -232,7 +241,7 @@ export class X86Lipsum {
         });
     }
 
-    appendAdds(total: number): X86Lipsum {
+    private createAdditionsNodes(total: number, isIncrement: boolean) {
         let done = 0;
         let goodOrigin = [];
         let goodDestination = [];
@@ -257,7 +266,7 @@ export class X86Lipsum {
 
                 if (goodOrigin.length >= this.addOrigins && goodDestination.length >= this.addDestinations) {
                     const index = this.count++;
-                    this.safelyCreateModificationNode(index, goodDestination, goodOrigin);
+                    this.safelyCreateNode(index, goodDestination, goodOrigin, isIncrement);
                     done++;
                     goodOrigin = [];
                     goodDestination = [];
@@ -268,7 +277,21 @@ export class X86Lipsum {
                 }
             });
         }
-        this.traceBuilder.appendTraceModification(TraceModificationType.add, goodCausers, goodTargets);
+        return {
+            goodCausers: goodCausers,
+            goodTargets: goodTargets
+        }
+    }
+
+    appendAdds(total: number): X86Lipsum {
+        const r = this.createAdditionsNodes(total, false);
+        this.traceBuilder.appendTraceModification(TraceModificationType.add, r.goodCausers, r.goodTargets);
+        return this;
+    }
+
+    appendIncrements(total: number): X86Lipsum {
+        const r = this.createAdditionsNodes(total, true);
+        this.traceBuilder.appendIncrement();
         return this;
     }
 
@@ -324,7 +347,7 @@ export class X86Lipsum {
                     return;
                 }
 
-                this.safelyCreateModificationNode(i, this.destinations.get(i).slice(), []);
+                this.safelyCreateNode(i, this.destinations.get(i).slice(), []);
                 goodTargets.push(i);
                 done++;
             });
@@ -376,7 +399,7 @@ export class X86Lipsum {
 
                     // Just create a good target
                     const index = this.count++;
-                    this.safelyCreateModificationNode(index, goodDestination, []);
+                    this.safelyCreateNode(index, goodDestination, []);
                     part++;
                 });
             }
@@ -454,7 +477,7 @@ export class X86Lipsum {
                         origin = goodOrigin2;
                     }
                     const index = this.count++;
-                    this.safelyCreateModificationNode(index, goodDestination, origin);
+                    this.safelyCreateNode(index, goodDestination, origin);
                     part++;
                 });
             }
