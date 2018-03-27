@@ -253,7 +253,7 @@ export class Trace {
             }
 
             let changeNode = traceModification.change[i].raw;
-            let node = this.nodes.get(t);
+            let originalNode = this.nodes.get(t);
 
             if (changeNode.code != null) {
                 this.nodes.get(t).code = traceModification.change[i].raw.code;
@@ -261,12 +261,12 @@ export class Trace {
             if (changeNode.destinations != null) {
                 // Remove everyone I'm not an origin anymore and add myself
                 // as a origin to my new destinations. Also update my list.
-                node.destinations.forEach((v) => {
+                originalNode.destinations.forEach((v) => {
                     const nv = this.nodes.get(v);
                     nv.origins = nv.origins.filter(item => item != t);
                 });
-                node.destinations = JSON.parse(JSON.stringify(changeNode.destinations));
-                node.destinations.forEach((v) => {
+                originalNode.destinations = JSON.parse(JSON.stringify(changeNode.destinations));
+                originalNode.destinations.forEach((v) => {
                     this.nodes.get(v).origins.push(t);
                 });
             }
