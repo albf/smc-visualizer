@@ -75,7 +75,7 @@ describe('TraceBuilder', () => {
             .createIncrementNode(9, "inc-1-3", [], [3])
             .appendIncrement()
 
-            .createTraceModificationNode(10, "k", [3], [0])
+            .createTraceModificationNode(10, "k", [3], [])
             .appendTraceModification(TraceModificationType.modify, [1], [10])
 
             .appendTraceModification(TraceModificationType.remove, [1], [10])
@@ -103,5 +103,13 @@ describe('TraceBuilder', () => {
             .appendTraceModification(TraceModificationType.join, [0, 0], [1, 2]);
 
         expect(() => { t.build() }).toThrowError(new RegExp("empty origin"));
+    }));
+
+    it('should throw if a modify has a origin', async(() => {
+        const t = initialTrace()
+            .createTraceModificationNode(3, "k", [], [1])
+            .appendTraceModification(TraceModificationType.modify, [1], [3])
+
+        expect(() => { t.build() }).toThrowError(new RegExp("unexpected origin usage"));
     }));
 });

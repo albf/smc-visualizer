@@ -30,12 +30,17 @@ export class TraceBuilder {
         nodes.set(elem, true);
     }
 
-    private validateConnections(nodes: Map<number, boolean>, elem: number, n: TraceNode, what: string, index: number) {
+    private validateConnections(nodes: Map<number, boolean>, elem: number, n: TraceNode, what: string, index: number, emptyOrigins: boolean = false) {
         n.destinations.forEach((v) => {
             if (!nodes.has(v) || !nodes.get(v)) {
                 throw new SyntaxError(what + " of element " + elem + " has bad destination " + v + " at index: " + index);
             }
         });
+
+        if (emptyOrigins && n.origins != null && n.origins.length > 0) {
+            throw new SyntaxError(what + " of element " + elem + " have unexpected origin usage at index: " + index);
+        }
+
         n.origins.forEach((v) => {
             if (!nodes.has(v) || !nodes.get(v)) {
                 throw new SyntaxError(what + " of element " + elem + " has bad origin " + v + " at index: " + index);
@@ -132,6 +137,10 @@ export class TraceBuilder {
                     mod.targets.forEach(t => {
                         this.validateExistNode(currentNodes, t, "Modification", i);
                     });
+
+                    mod.change.forEach(c => {
+                        this.validateConnections(currentNodes, c.index, c.raw, "Addition", i, true);
+                    })
                     break;
                 }
                 case TraceModificationType.join: {
@@ -139,16 +148,16 @@ export class TraceBuilder {
                     this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
                     this.validateRemoveNode(currentNodes, mod.targets[1], "Join/Removal", i);
                     this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
-                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Addition", i);
+                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Join/Addition", i);
                     break;
                 }
                 case TraceModificationType.split: {
                     this.validateSplit(currentNodes, mod, i);
-                    this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
-                    this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
-                    this.validateAddNode(currentNodes, mod.change[1].index, "Join/Addition", i);
-                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Addition", i);
-                    this.validateConnections(currentNodes, mod.change[1].index, mod.change[1].raw, "Addition", i);
+                    this.validateRemoveNode(currentNodes, mod.targets[0], "Split/Removal", i);
+                    this.validateAddNode(currentNodes, mod.change[0].index, "Split/Addition", i);
+                    this.validateAddNode(currentNodes, mod.change[1].index, "Split/Addition", i);
+                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Split/Addition", i);
+                    this.validateConnections(currentNodes, mod.change[1].index, mod.change[1].raw, "Split/Addition", i);
                     break;
                 }
                 default: {

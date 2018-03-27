@@ -1,5 +1,5 @@
 import { async } from '@angular/core/testing';
-import { TraceSamples } from './samples';
+import { TraceSamples, X86Lipsum } from './samples';
 import { Trace } from './trace';
 
 describe('TraceSamples', () => {
@@ -30,6 +30,15 @@ describe('TraceSamples', () => {
 
             const j2 = s.trace.dumpStringAll();
             expect(j2).toBe(j1);
+        }
+    }));
+
+    it('should construct valid x86 tree samples', async(() => {
+        const x86 = new X86Lipsum();
+
+        for (let i = 0; i < 10; i++) {
+            const t = x86.tree(1 + i, 1 + i, 3 + i);
+            t.build();  // build will validate tree constructs
         }
     }));
 });

@@ -95,7 +95,7 @@ export class TraceSamples {
 }
 
 // Dummy class to generate useless X86 code
-class X86Lipsum {
+export class X86Lipsum {
     private insCount: number;
     private jumpCount: number;
 

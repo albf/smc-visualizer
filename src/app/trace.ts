@@ -109,9 +109,9 @@ export class Trace {
             this.createUndo(latestModification);
         }
 
-        // Next, apply the change and increment.
+        // Next, apply the modification and increment (if exists).
         const ret = this.applyModification(latestModification);
-        this.applyIncrement(latestIncrement);
+        if (latestIncrement != null) this.applyIncrement(latestIncrement);
 
         // Lastly, create selection mask if needed
         this.createMaskIfNeeded();
@@ -132,7 +132,7 @@ export class Trace {
         }
         this.counter--;
 
-        this.undoIncrement(previousIncrement);
+        if (previousIncrement != null) this.undoIncrement(previousIncrement);
         const ret = this.applyModification(previousUndo);
 
         if (ret) {
@@ -317,25 +317,21 @@ export class Trace {
 
             this.nodes.set(change.index, JSON.parse(JSON.stringify(change.raw)));
             this.nodes.get(change.index).destinations.filter((d) => !this.hasNode(d, null));
+        });
 
+        // All nodes were added into this.nodes and TraceBuilder.validate guarantees
+        // that both origins and destinations must contain valid node indexes
+        traceModification.change.forEach((change, i) => {
             change.raw.origins.forEach((d) => {
-                if (!this.hasNode(d, true)) {
-                    console.log("Missing origin node: " + d);
-                    return;
-                }
                 if (this.nodes.get(d).destinations.indexOf(change.index) < 0) {
                     this.nodes.get(d).destinations.push(change.index);
                 }
             });
             change.raw.destinations.forEach((d) => {
-                if (!this.hasNode(d, true)) {
-                    console.log("Missing destination node: " + d);
-                    return;
-                }
                 if (this.nodes.get(d).origins.indexOf(change.index) < 0) {
                     this.nodes.get(d).origins.push(change.index);
                 }
-            })
+            });
         });
     }
 
