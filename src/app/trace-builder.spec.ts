@@ -10,6 +10,38 @@ function initialTrace(): TraceBuilder {
         .appendNode(3, 'd', []);
 }
 
+const traceJson = `{
+    "nodes": {
+        "0": {
+            "code": "start",
+            "destinations": [0],
+            "origins": []
+        }
+    },
+    "modifications": [
+        {
+            "type": "remove",
+            "causers": [0],
+            "targets": [0],
+            "change": null
+        }
+    ],
+    "increments": [
+        {
+            "additions": [
+                {
+                    "raw": {
+                        "code": "new",
+                        "destinations": [],
+                        "origins": []
+                    },
+                    "index": 5
+                }
+            ]
+        }
+    ]
+}`;
+
 describe('TraceBuilder', () => {
     it('should throw on already used index append', async(() => {
         expect(() => { initialTrace().appendNode(0, 'k', [1, 2, 3]).build() }).toThrow();
@@ -75,7 +107,7 @@ describe('TraceBuilder', () => {
             .createIncrementNode(9, "inc-1-3", [], [3])
             .appendIncrement()
 
-            .createTraceModificationNode(10, "k", [3], [0])
+            .createTraceModificationNode(10, "k", [3], [])
             .appendTraceModification(TraceModificationType.modify, [1], [10])
 
             .appendTraceModification(TraceModificationType.remove, [1], [10])
@@ -103,5 +135,25 @@ describe('TraceBuilder', () => {
             .appendTraceModification(TraceModificationType.join, [0, 0], [1, 2]);
 
         expect(() => { t.build() }).toThrowError(new RegExp("empty origin"));
+    }));
+
+    it('should throw if a modify has a origin', async(() => {
+        const t = initialTrace()
+            .createTraceModificationNode(3, "k", [], [1])
+            .appendTraceModification(TraceModificationType.modify, [1], [3])
+
+        expect(() => { t.build() }).toThrowError(new RegExp("unexpected origin usage"));
+    }));
+
+    it('should parse a correct JSON trace', async(() => {
+        const t = new TraceBuilder().fromFile(traceJson);
+
+        expect(t.nodes.size).toBe(1);
+        expect(t.modifications.length).toBe(1);
+        expect(t.increments.length).toBe(1);
+    }));
+
+    it('should throw if initial nodes has a unknown destination', async(() => {
+        expect(() => { initialTrace().appendNode(10, "bla", [666]).build() }).toThrowError(new RegExp("bad destination"));
     }));
 });

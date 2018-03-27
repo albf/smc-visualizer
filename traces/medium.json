@@ -1,0 +1,192 @@
+{
+    "nodes": {
+        "0": {
+            "code": "start",
+            "destinations": [
+                3
+            ],
+            "origins": []
+        },
+        "1": {
+            "code": "mov eax, [ebx]\nlea edi, [ebx+4*esi]\nmov DWORD PTR [rbp-76], esi\njne .L2",
+            "destinations": [],
+            "origins": [
+                3
+            ]
+        },
+        "2": {
+            "code": "xor edx, edx\nsub eax, 216\njeq loop",
+            "destinations": [],
+            "origins": [
+                3
+            ]
+        },
+        "3": {
+            "code": "mov edx, [esi+4*ebx]\npush dword[esi+ebp+40]\nfld dword[esi+ebp+40]\njl label1",
+            "destinations": [
+                1,
+                2
+            ],
+            "origins": [
+                0
+            ]
+        }
+    },
+    "modifications": [
+        {
+            "type": "add",
+            "causers": [
+                1
+            ],
+            "targets": [
+                1
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "add dword[esi+edi],1\nmovss [ebp+12],xmm0\njg .KC",
+                        "destinations": [
+                            3,
+                            1
+                        ],
+                        "origins": [
+                            1,
+                            2
+                        ]
+                    },
+                    "index": 4
+                }
+            ]
+        },
+        {
+            "type": "modify",
+            "causers": [
+                1
+            ],
+            "targets": [
+                2
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "popl %ecx\nimul esi, edi, 25\nadd eax, 10\nje .L4",
+                        "destinations": [
+                            4
+                        ],
+                        "origins": []
+                    },
+                    "index": 2
+                }
+            ]
+        },
+        {
+            "type": "split",
+            "causers": [
+                1
+            ],
+            "targets": [
+                2
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "push rbp\nmov rbp, rsp\nsub rsp, 80\njeq loop",
+                        "destinations": [
+                            4
+                        ],
+                        "origins": [
+                            3,
+                            3
+                        ]
+                    },
+                    "index": 6
+                },
+                {
+                    "raw": {
+                        "code": "mov QWORD PTR [rbp-72], rdi\nshr ebx, cl\njl label1",
+                        "destinations": [
+                            4
+                        ],
+                        "origins": [
+                            4
+                        ]
+                    },
+                    "index": 7
+                }
+            ]
+        },
+        {
+            "type": "join",
+            "causers": [
+                1,
+                1
+            ],
+            "targets": [
+                5,
+                6
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "mov eax, [ebx]\nlea edi, [ebx+4*esi]\nmov DWORD PTR [rbp-76], esi\njg .KC",
+                        "destinations": [
+                            4,
+                            7
+                        ],
+                        "origins": []
+                    },
+                    "index": 8
+                }
+            ]
+        },
+        {
+            "type": "remove",
+            "causers": [
+                1
+            ],
+            "targets": [
+                7
+            ],
+            "change": null
+        }
+    ],
+    "increments": [
+        {
+            "additions": []
+        },
+        {
+            "additions": [
+                {
+                    "raw": {
+                        "code": "push eax\nmov DWORD PTR [rbp-80], edx\njne .L2",
+                        "destinations": [],
+                        "origins": [
+                            1
+                        ]
+                    },
+                    "index": 5
+                }
+            ]
+        },
+        {
+            "additions": []
+        },
+        {
+            "additions": [
+                {
+                    "raw": {
+                        "code": "xor edx, edx\nsub eax, 216\nje .L4",
+                        "destinations": [
+                            4
+                        ],
+                        "origins": [
+                            1,
+                            3
+                        ]
+                    },
+                    "index": 9
+                }
+            ]
+        }
+    ]
+}

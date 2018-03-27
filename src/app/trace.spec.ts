@@ -46,7 +46,7 @@ function splitTrace(): Trace {
 }
 
 describe('Trace', () => {
-    it('should handle perform an add correctly', async(() => {
+    it('should handle and perform an add correctly', async(() => {
         const t = addTrace();
 
         let dump = t.dumpStringAll();
@@ -72,7 +72,17 @@ describe('Trace', () => {
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
     }));
 
-    it('should handle perform a remove correctly', async(() => {
+    it('should undo an add correctly', async(() => {
+        const t = addTrace();
+        const expected = t.dumpStringAll();
+
+        t.applyNext();
+        t.applyUndo();
+
+        expect(t.dumpStringAll()).toBe(expected);
+    }));
+
+    it('should handle and perform a remove correctly', async(() => {
         const t = removeTrace();
 
         let dump = t.dumpStringAll();
@@ -98,7 +108,17 @@ describe('Trace', () => {
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
     }));
 
-    it('should handle perform a modify correctly', async(() => {
+    it('should undo a remove correctly', async(() => {
+        const t = removeTrace();
+        const expected = t.dumpStringAll();
+
+        t.applyNext();
+        t.applyUndo();
+
+        expect(t.dumpStringAll()).toBe(expected);
+    }));
+
+    it('should handle and perform a modify correctly', async(() => {
         const t = modificationTrace();
 
         let dump = t.dumpStringAll();
@@ -124,7 +144,17 @@ describe('Trace', () => {
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
     }));
 
-    it('should handle perform a join correctly', async(() => {
+    it('should undo a modify correctly', async(() => {
+        const t = modificationTrace();
+        const expected = t.dumpStringAll();
+
+        t.applyNext();
+        t.applyUndo();
+
+        expect(t.dumpStringAll()).toBe(expected);
+    }));
+
+    it('should handle and perform a join correctly', async(() => {
         const t = joinTrace();
 
         let dump = t.dumpStringAll();
@@ -152,7 +182,17 @@ describe('Trace', () => {
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
     }));
 
-    it('should handle perform a split correctly', async(() => {
+    it('should undo a join correctly', async(() => {
+        const t = joinTrace();
+        const expected = t.dumpStringAll();
+
+        t.applyNext();
+        t.applyUndo();
+
+        expect(t.dumpStringAll()).toBe(expected);
+    }));
+
+    it('should handle and perform a split correctly', async(() => {
         const t = splitTrace();
 
         let dump = t.dumpStringAll();
@@ -180,6 +220,35 @@ describe('Trace', () => {
         t.createModificationPeek();
 
         expect(t.dumpStringNodes(t.peekModificationNodes)).toBe(expected);
+    }));
+
+    it('should undo a split correctly', async(() => {
+        const t = splitTrace();
+        const expected = t.dumpStringAll();
+
+        t.applyNext();
+        t.applyUndo();
+
+        expect(t.dumpStringAll()).toBe(expected);
+    }));
+
+    it('should perform an increment if one exists', async(() => {
+        const t = initialTrace()
+            .createTraceModificationNode(3, "c", [2], [0])
+            .appendTraceModification(TraceModificationType.add, [0], [1])
+            .createIncrementNode(4, "inc", [1, 2], [0])
+            .appendIncrement()
+            .build();
+
+        t.applyNext();
+        const expected = "nodes:\n"
+            + "  k 0 - v { code : a | destinations: 1,2,3,4 | origins:  }\n"
+            + "  k 1 - v { code : b | destinations: 2 | origins: 0,4 }\n"
+            + "  k 2 - v { code : c | destinations:  | origins: 0,1,3,4 }\n"
+            + "  k 3 - v { code : c | destinations: 2 | origins: 0 }\n"
+            + "  k 4 - v { code : inc | destinations: 1,2 | origins: 0 }";
+
+        expect(t.dumpStringNodes(t.nodes)).toBe(expected);
     }));
 
     it('should mask a simple graph correctly', async(() => {

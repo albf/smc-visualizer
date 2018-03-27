@@ -16,6 +16,7 @@ export class TraceSamples {
 
         this.sample1();
         this.sample2();
+        this.sample3();
     }
 
     getSample(index: number): TraceSample {
@@ -68,34 +69,40 @@ export class TraceSamples {
         this.samples.push({
             name: "Small x86",
             description: "Small x86 random instructions",
-            trace: this.x86.tree(3, 5, 8)
-                .createTraceModificationNode(8, this.x86.code(6), [], [1, 2])
-                .appendTraceModification(TraceModificationType.add, [7], [1])
-                .appendIncrement()
+            trace: this.x86.tree(2, 3, 4)
+                .appendAdds(1)
+                .appendIncrements(0)
+                .appendModifies(1)
+                .appendIncrements(1)
+                .appendSplits(1)
+                .appendIncrements(0)
+                .appendJoins(1)
+                .appendIncrements(1)
+                .appendRemoves(1)
+                .build()
+        });
+    }
 
-                .createTraceModificationNode(3, this.x86.code(10), [1, 2], [])
-                .appendTraceModification(TraceModificationType.modify, [0], [3])
-                .appendIncrement()
-
-                .appendTraceModification(TraceModificationType.remove, [4], [1])
-                .appendIncrement()
-
-                .createTraceModificationNode(9, this.x86.code(6), [], [6])
-                .createTraceModificationNode(10, this.x86.code(5), [], [6])
-                .appendTraceModification(TraceModificationType.split, [7], [5])
-                .appendIncrement()
-
-                .createTraceModificationNode(11, this.x86.code(15), [6], [])
-                .appendTraceModification(TraceModificationType.join, [4, 4], [9, 10])
-                .appendIncrement()
-
+    private sample3() {
+        this.samples.push({
+            name: "Large x86",
+            description: "Large x86 random instructions",
+            trace: this.x86.tree(4, 5, 8)
+                .appendAdds(5)
+                .appendRemoves(1)
+                .appendModifies(2)
+                .appendJoins(2)
+                .appendSplits(2)
+                .appendAdds(3)
+                .appendSplits(2)
+                .appendRemoves(1)
                 .build()
         });
     }
 }
 
 // Dummy class to generate useless X86 code
-class X86Lipsum {
+export class X86Lipsum {
     private insCount: number;
     private jumpCount: number;
 
@@ -104,6 +111,11 @@ class X86Lipsum {
     private currentSize: number;
     private maxSize: number;
     private count: number;
+
+    traceBuilder: TraceBuilder;
+    private destinations: Map<number, number[]>;
+    private addDestinations: number;
+    private addOrigins: number;
 
     private instructions: string[] = ["push rbp"
         , "mov rbp, rsp"
@@ -155,7 +167,7 @@ class X86Lipsum {
         return this.jumps[this.jumpCount];
     }
 
-    code(size: number) {
+    private code(size: number) {
         if (size < 1) {
             throw new Error("Unexpected size: " + size);
         }
@@ -167,7 +179,7 @@ class X86Lipsum {
         return code.join("\n");
     }
 
-    tree(height: number, minLen: number, maxLen: number): TraceBuilder {
+    tree(height: number, minLen: number, maxLen: number): X86Lipsum {
         if (minLen < 1 || maxLen < 1) {
             throw new Error("Unexpected sizes: (" + minLen + ", " + maxLen + ")");
         } else if (maxLen < minLen) {
@@ -178,10 +190,17 @@ class X86Lipsum {
         this.maxSize = maxLen;
         this.currentSize = Math.floor((minLen + maxLen) / 2);
         this.count = 1;
+        this.destinations = new Map<number, number[]>();
+        this.addDestinations = 2;
+        this.addOrigins = 2;
 
         const tb = new TraceBuilder().appendNode(0, "start", []);
         const dst = this.recursiveAppend(tb, height);
-        return tb.updateDestination(0, [dst]);
+
+        this.traceBuilder = tb.updateDestination(0, [dst]);
+        this.destinations.set(0, [dst]);
+
+        return this;
     }
 
     private size(): number {
@@ -194,12 +213,282 @@ class X86Lipsum {
         if (height <= 1) {
             const index = this.count++;
             tb.appendNode(index, this.code(this.size()), []);
+            this.destinations.set(index, []);
             return index;
         }
         let dst1 = this.recursiveAppend(tb, height - 1);
         let dst2 = this.recursiveAppend(tb, height - 1);
         const index = this.count++;
+
         tb.appendNode(index, this.code(this.size()), [dst1, dst2]);
+        this.destinations.set(index, [dst1, dst2]);
+
         return index;
+    }
+
+    private safelyCreateNode(index: number, destinations: number[], origins: number[], isIncrement: boolean = false) {
+        const code = this.code(this.size());
+        if (isIncrement) {
+            this.traceBuilder.createIncrementNode(index, code, destinations, origins);
+        } else {
+            this.traceBuilder.createTraceModificationNode(index, code, destinations, origins);
+        }
+        this.destinations.set(index, destinations);
+        origins.forEach((v2, i2) => {
+            if (this.destinations.get(v2).indexOf(index) < 0) {
+                this.destinations.get(v2).push(index);
+            }
+        });
+    }
+
+    private createAdditionsNodes(total: number, isIncrement: boolean) {
+        let done = 0;
+        let goodOrigin = [];
+        let goodDestination = [];
+        let goodCausers = [];
+        let goodTargets = [];
+
+        while (done < total) {
+            this.destinations.forEach((d, i) => {
+                if ((i == 0) || (done >= total)) return;
+                if (goodCausers.length < total) {
+                    goodCausers.push(i);
+                }
+
+                if ((goodOrigin.length < this.addOrigins) && (d.length < 2)) {
+                    if (goodOrigin.length == 0) {
+                        goodTargets.push(i);
+                    }
+                    goodOrigin.push(i);
+                } else if (goodDestination.length < this.addDestinations) {
+                    goodDestination.push(i)
+                }
+
+                if (goodOrigin.length >= this.addOrigins && goodDestination.length >= this.addDestinations) {
+                    const index = this.count++;
+                    this.safelyCreateNode(index, goodDestination, goodOrigin, isIncrement);
+                    done++;
+                    goodOrigin = [];
+                    goodDestination = [];
+
+                    // Update origins and destinations for the next added node
+                    this.addDestinations = (this.addDestinations + 1) % 3;
+                    this.addOrigins = (this.addOrigins % 2) + 1;
+                }
+            });
+        }
+        return {
+            goodCausers: goodCausers,
+            goodTargets: goodTargets
+        }
+    }
+
+    appendAdds(total: number): X86Lipsum {
+        const r = this.createAdditionsNodes(total, false);
+        this.traceBuilder.appendTraceModification(TraceModificationType.add, r.goodCausers, r.goodTargets);
+        return this;
+    }
+
+    appendIncrements(total: number): X86Lipsum {
+        const r = this.createAdditionsNodes(total, true);
+        this.traceBuilder.appendIncrement();
+        return this;
+    }
+
+    private isUnique(i: number) {
+        let unique = false;
+        this.destinations.forEach((d2, i2) => {
+            if (d2.indexOf(i) >= 0 && d2.length == 1) {
+                unique = true;
+            }
+        });
+        return unique;
+    }
+
+    appendRemoves(total: number): X86Lipsum {
+        let done = 0;
+        let goodCausers = [];
+        let goodTargets = [];
+
+        while (done < total) {
+            this.destinations.forEach((d, i) => {
+                if ((i == 0) || (done >= total)) return;
+                if (goodCausers.length < total) {
+                    goodCausers.push(i);
+                    return;
+                }
+
+                const unique = this.isUnique(i);
+                if (!unique) {
+                    this.destinations.forEach((d2, i2) => {
+                        this.destinations.set(i2, d2.filter(x => x != i));
+                    });
+
+                    done++;
+                    goodTargets.push(i);
+                    this.destinations.delete(i);
+                }
+            });
+        }
+        this.traceBuilder.appendTraceModification(TraceModificationType.remove, goodCausers, goodTargets);
+        return this;
+    }
+
+    appendModifies(total: number): X86Lipsum {
+        let done = 0;
+        let goodCausers = [];
+        let goodTargets = [];
+
+        while (done < total) {
+            this.destinations.forEach((d, i) => {
+                if ((i == 0) || (done >= total)) return;
+                if (goodCausers.length < total) {
+                    goodCausers.push(i);
+                    return;
+                }
+
+                this.safelyCreateNode(i, this.destinations.get(i).slice(), []);
+                goodTargets.push(i);
+                done++;
+            });
+        }
+        this.traceBuilder.appendTraceModification(TraceModificationType.modify, goodCausers, goodTargets);
+        return this;
+    }
+
+    appendJoins(total: number): X86Lipsum {
+        for (let done = 0; done < total; done++) {
+            let part = 0;
+            let goodCausers = [];
+            let goodTargets = [];
+            let goodDestination = [];
+
+            while (part < 4) {
+                this.destinations.forEach((d, i) => {
+                    if ((i == 0) || (part >= 4)) return;
+                    if (goodCausers.length < 1) {
+                        goodCausers = [i, i];
+                        return;
+                    }
+
+                    // Try to find a good join victims
+                    if (part < 2) {
+                        if (!this.isUnique(i)) {
+                            this.destinations.forEach((d2, i2) => {
+                                this.destinations.set(i2, d2.filter(x => x != i));
+                            });
+
+                            // Tries to get one destination from the previous nodes
+                            if (goodDestination.length == 0 && d.length > 0) {
+                                goodDestination.push(d[0]);
+                            }
+
+                            part++;
+                            goodTargets.push(i);
+                            this.destinations.delete(i);
+                        }
+                        return;
+                    }
+
+                    // Find one good destination
+                    if (part < 3) {
+                        goodDestination.push(i);
+                        part++;
+                        return;
+                    }
+
+                    // Just create a good target
+                    const index = this.count++;
+                    this.safelyCreateNode(index, goodDestination, []);
+                    part++;
+                });
+            }
+
+            this.traceBuilder.appendTraceModification(TraceModificationType.join, goodCausers, goodTargets);
+        }
+
+        return this;
+    }
+
+    appendSplits(total: number): X86Lipsum {
+        for (let done = 0; done < total; done++) {
+            let part = 0;
+            let goodCausers = [];
+            let goodTargets = [];
+            let goodDestination = [];
+            let goodOrigin1 = [];
+            let goodOrigin2 = [];
+
+            while (part < 5) {
+                this.destinations.forEach((d, i) => {
+                    if ((i == 0) || (part >= 5)) return;
+                    if (goodCausers.length < 1) {
+                        goodCausers.push(i);
+                        return;
+                    }
+
+                    // Try to find a good split victim
+                    if (part < 1) {
+                        if (!this.isUnique(i)) {
+                            let previousOrigins = [];
+                            this.destinations.forEach((d2, i2) => {
+                                if (d2.indexOf(i) >= 0) {
+                                    previousOrigins.push(i2);
+                                }
+                                this.destinations.set(i2, d2.filter(x => x != i));
+                            });
+
+                            // Keep the destinations
+                            goodDestination = d;
+
+                            part++;
+                            goodTargets.push(i);
+                            this.destinations.delete(i);
+
+                            if (previousOrigins.length > 0) {
+                                goodOrigin1.push(previousOrigins[0]);
+                            }
+
+                            if (previousOrigins.length > 1) {
+                                goodOrigin2.push(previousOrigins[1]);
+                            }
+                        }
+                        return;
+                    }
+
+                    // Find a good origin for split1 and for split 2
+                    if (part < 2) {
+                        goodOrigin1.push(i);
+                        part++;
+                        return;
+                    }
+
+                    if (part < 3) {
+                        goodOrigin2.push(i);
+                        part++;
+                        return;
+                    }
+
+                    // Just create the two targets
+                    let origin;
+                    if (part < 4) {
+                        origin = goodOrigin1;
+                    } else {
+                        origin = goodOrigin2;
+                    }
+                    const index = this.count++;
+                    this.safelyCreateNode(index, goodDestination, origin);
+                    part++;
+                });
+            }
+
+            this.traceBuilder.appendTraceModification(TraceModificationType.split, goodCausers, goodTargets);
+        }
+
+        return this;
+    }
+
+    build(): Trace {
+        return this.traceBuilder.build();
     }
 }

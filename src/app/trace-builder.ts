@@ -6,8 +6,6 @@ export class TraceBuilder {
 
     private trace: Trace;
     private nodes: Map<number, TraceNode>;                  // The graph, represented using a map
-    private increments: TraceIncrement[];               // Increments are always a pack of additions
-    private modifications: TraceModification[];
 
     constructor() {
         this.init();
@@ -19,8 +17,6 @@ export class TraceBuilder {
 
         this.trace = new Trace();
         this.nodes = this.trace.nodes;
-        this.increments = this.trace.increments;
-        this.modifications = this.trace.modifications;
     }
 
     private validateAddNode(nodes: Map<number, boolean>, elem: number, what: string, index: number) {
@@ -30,12 +26,21 @@ export class TraceBuilder {
         nodes.set(elem, true);
     }
 
-    private validateConnections(nodes: Map<number, boolean>, elem: number, n: TraceNode, what: string, index: number) {
+    private validateDestinations(nodes: Map<number, any>, elem: number, n: TraceNode, what: string, index: number) {
         n.destinations.forEach((v) => {
             if (!nodes.has(v) || !nodes.get(v)) {
                 throw new SyntaxError(what + " of element " + elem + " has bad destination " + v + " at index: " + index);
             }
         });
+    }
+
+    private validateConnections(nodes: Map<number, any>, elem: number, n: TraceNode, what: string, index: number, emptyOrigins: boolean = false) {
+        this.validateDestinations(nodes, elem, n, what, index);
+
+        if (emptyOrigins && n.origins != null && n.origins.length > 0) {
+            throw new SyntaxError(what + " of element " + elem + " have unexpected origin usage at index: " + index);
+        }
+
         n.origins.forEach((v) => {
             if (!nodes.has(v) || !nodes.get(v)) {
                 throw new SyntaxError(what + " of element " + elem + " has bad origin " + v + " at index: " + index);
@@ -97,10 +102,10 @@ export class TraceBuilder {
         this.validateExistNode(nodes, traceModification.targets[1], "Split/Removal", index);
     }
 
-    validate() {
+    validateChanges() {
         let currentNodes: Map<number, boolean> = new Map<number, boolean>();
 
-        if (this.increments.length > this.modifications.length) {
+        if (this.trace.increments.length > this.trace.modifications.length) {
             throw new RangeError("Number of modifications should be >= number of increments");
         }
 
@@ -108,8 +113,8 @@ export class TraceBuilder {
             currentNodes.set(i, true);
         })
 
-        for (let i = 0; i < this.modifications.length; i++) {
-            const mod = this.modifications[i];
+        for (let i = 0; i < this.trace.modifications.length; i++) {
+            const mod = this.trace.modifications[i];
             switch (mod.type) {
                 case TraceModificationType.add: {
                     mod.change.forEach(c => {
@@ -132,6 +137,10 @@ export class TraceBuilder {
                     mod.targets.forEach(t => {
                         this.validateExistNode(currentNodes, t, "Modification", i);
                     });
+
+                    mod.change.forEach(c => {
+                        this.validateConnections(currentNodes, c.index, c.raw, "Addition", i, true);
+                    })
                     break;
                 }
                 case TraceModificationType.join: {
@@ -139,16 +148,16 @@ export class TraceBuilder {
                     this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
                     this.validateRemoveNode(currentNodes, mod.targets[1], "Join/Removal", i);
                     this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
-                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Addition", i);
+                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Join/Addition", i);
                     break;
                 }
                 case TraceModificationType.split: {
                     this.validateSplit(currentNodes, mod, i);
-                    this.validateRemoveNode(currentNodes, mod.targets[0], "Join/Removal", i);
-                    this.validateAddNode(currentNodes, mod.change[0].index, "Join/Addition", i);
-                    this.validateAddNode(currentNodes, mod.change[1].index, "Join/Addition", i);
-                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Addition", i);
-                    this.validateConnections(currentNodes, mod.change[1].index, mod.change[1].raw, "Addition", i);
+                    this.validateRemoveNode(currentNodes, mod.targets[0], "Split/Removal", i);
+                    this.validateAddNode(currentNodes, mod.change[0].index, "Split/Addition", i);
+                    this.validateAddNode(currentNodes, mod.change[1].index, "Split/Addition", i);
+                    this.validateConnections(currentNodes, mod.change[0].index, mod.change[0].raw, "Split/Addition", i);
+                    this.validateConnections(currentNodes, mod.change[1].index, mod.change[1].raw, "Split/Addition", i);
                     break;
                 }
                 default: {
@@ -157,13 +166,13 @@ export class TraceBuilder {
             }
 
             // Check if not incrementing some node already used.
-            if (this.increments.length > i) {
-                this.increments[i].additions.forEach(tgc => {
+            if (this.trace.increments.length > i) {
+                this.trace.increments[i].additions.forEach(tgc => {
                     this.validateAddNode(currentNodes, tgc.index, "Increments/Addition", i);
                 });
 
                 // Should validate connections only after adding everyone
-                this.increments[i].additions.forEach(tgc => {
+                this.trace.increments[i].additions.forEach(tgc => {
                     this.validateConnections(currentNodes, tgc.index, tgc.raw, "Increments/Addition", i);
                 });
             }
@@ -211,7 +220,7 @@ export class TraceBuilder {
             modification.change = this.traceGraphChanges;
             this.traceGraphChanges = [];
         }
-        this.modifications.push(modification);
+        this.trace.modifications.push(modification);
         return this;
     }
 
@@ -230,7 +239,7 @@ export class TraceBuilder {
     }
 
     appendIncrement(): TraceBuilder {
-        this.increments.push(this.traceIncrement);
+        this.trace.increments.push(this.traceIncrement);
         this.traceIncrement = { additions: [] };
 
         return this;
@@ -245,14 +254,14 @@ export class TraceBuilder {
             console.log("Warning: Unexpected modifications undefined");
 
         } else {
-            this.modifications = parsed["modifications"];
+            this.trace.modifications = parsed["modifications"];
         }
 
         if (parsed["increments"] == undefined) {
             console.log("Warning: Unexpected increments undefined");
 
         } else {
-            this.increments = parsed["increments"];
+            this.trace.increments = parsed["increments"];
         }
 
         if (parsed["nodes"] == undefined) {
@@ -270,7 +279,29 @@ export class TraceBuilder {
         return this.build();
     }
 
+    toFileFormat(): string {
+        const trace = this.build();
+        let nodes = {};
+        let result = '{\n"nodes":';
+
+        trace.nodes.forEach((tn, k) => {
+            nodes[k.toString()] = tn;
+        });
+        result += JSON.stringify(nodes);
+        result += ',\n"modifications":' + JSON.stringify(trace.modifications);;
+        result += ',\n"increments":' + JSON.stringify(trace.increments);;
+
+        result += '\n}';
+        return result;
+    }
+
     build(): Trace {
+        // Check initial nodes connections
+        this.nodes.forEach((value, key) => {
+            //this.validateConnections(this.nodes, key, value, "Initialization", key, true);
+            this.validateDestinations(this.nodes, key, value, "Initialization", key);
+        });
+
         // Assign inverses
         this.nodes.forEach((value, key) => { this.nodes.get(key).origins = []; });
         this.nodes.forEach((value, origin) => {
@@ -279,8 +310,8 @@ export class TraceBuilder {
             });
         });
 
-        // Validate before build
-        this.validate();
+        // Validate changes (modification and increments) before build
+        this.validateChanges();
         return this.trace;
     }
 }

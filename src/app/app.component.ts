@@ -160,20 +160,17 @@ export class AppComponent {
             return;
         }
 
-        console.log("received play request. playExit: " + this.playExit);
         this.playing = true;
         // It's possible there is a waiting thread, check if that's the case
         if (!this.playExit) {
             return;
         }
-        console.log("thread has exit");
 
         const fn = (time: number) => {
             if (this.playing && this.advanceTime(true)) {
                 setTimeout(fn, 1000);
             } else {
                 this.playExit = true;
-                console.log("exiting. playExit: " + this.playExit);
             }
         }
 

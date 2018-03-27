@@ -109,9 +109,9 @@ export class Trace {
             this.createUndo(latestModification);
         }
 
-        // Next, apply the change and increment.
+        // Next, apply the modification and increment (if exists).
         const ret = this.applyModification(latestModification);
-        this.applyIncrement(latestIncrement);
+        if (latestIncrement != null) this.applyIncrement(latestIncrement);
 
         // Lastly, create selection mask if needed
         this.createMaskIfNeeded();
@@ -132,7 +132,7 @@ export class Trace {
         }
         this.counter--;
 
-        this.undoIncrement(previousIncrement);
+        if (previousIncrement != null) this.undoIncrement(previousIncrement);
         const ret = this.applyModification(previousUndo);
 
         if (ret) {
@@ -253,7 +253,7 @@ export class Trace {
             }
 
             let changeNode = traceModification.change[i].raw;
-            let node = this.nodes.get(t);
+            let originalNode = this.nodes.get(t);
 
             if (changeNode.code != null) {
                 this.nodes.get(t).code = traceModification.change[i].raw.code;
@@ -261,12 +261,12 @@ export class Trace {
             if (changeNode.destinations != null) {
                 // Remove everyone I'm not an origin anymore and add myself
                 // as a origin to my new destinations. Also update my list.
-                node.destinations.forEach((v) => {
+                originalNode.destinations.forEach((v) => {
                     const nv = this.nodes.get(v);
                     nv.origins = nv.origins.filter(item => item != t);
                 });
-                node.destinations = JSON.parse(JSON.stringify(changeNode.destinations));
-                node.destinations.forEach((v) => {
+                originalNode.destinations = JSON.parse(JSON.stringify(changeNode.destinations));
+                originalNode.destinations.forEach((v) => {
                     this.nodes.get(v).origins.push(t);
                 });
             }
@@ -317,25 +317,21 @@ export class Trace {
 
             this.nodes.set(change.index, JSON.parse(JSON.stringify(change.raw)));
             this.nodes.get(change.index).destinations.filter((d) => !this.hasNode(d, null));
+        });
 
+        // All nodes were added into this.nodes and TraceBuilder.validate guarantees
+        // that both origins and destinations must contain valid node indexes
+        traceModification.change.forEach((change, i) => {
             change.raw.origins.forEach((d) => {
-                if (!this.hasNode(d, true)) {
-                    console.log("Missing origin node: " + d);
-                    return;
-                }
                 if (this.nodes.get(d).destinations.indexOf(change.index) < 0) {
                     this.nodes.get(d).destinations.push(change.index);
                 }
             });
             change.raw.destinations.forEach((d) => {
-                if (!this.hasNode(d, true)) {
-                    console.log("Missing destination node: " + d);
-                    return;
-                }
                 if (this.nodes.get(d).origins.indexOf(change.index) < 0) {
                     this.nodes.get(d).origins.push(change.index);
                 }
-            })
+            });
         });
     }
 
@@ -422,28 +418,32 @@ export class Trace {
         const node0 = this.nodes.get(t0);
         const node1 = this.nodes.get(t1);
 
-        const originsNode0 = node0.origins != null ? node0.origins : [];
-        const originsNode1 = node1.origins != null ? node1.origins : [];
-        const origins = [];
+        // Should use traceModification origin if exists
+        let origins;
+        const traceOrigins = traceModification.change[0].raw.origins;
+        if (traceOrigins == null || traceOrigins.length == 0) {
+            origins = [];
+            const originsNode0 = node0.origins != null ? node0.origins : [];
+            const originsNode1 = node1.origins != null ? node1.origins : [];
 
-        // Add origins from previous nodes
-        originsNode0.concat(originsNode1).forEach((r) => {
-            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
-                origins.push(r);
-            }
-        })
+            // Add origins from previous nodes
+            originsNode0.concat(originsNode1).forEach((r) => {
+                if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                    origins.push(r);
+                }
+            })
+        } else {
+            origins = traceOrigins;
+        }
+
 
         // Remove node1 and node2
         this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
-        // Adds the new node. Add requires origins to be set
-        if (origins.length > 0) {
-            traceModification.change[0].raw.origins = origins;
-        }
+        // Adds origins, but don't change traceModification
+        traceModification.change[0].raw.origins = origins;
         this.applyAdd(traceModification);
-        if (origins.length > 0) {
-            traceModification.change[0].raw.origins = [];
-        }
+        traceModification.change[0].raw.origins = traceOrigins;
     }
 
     private peekJoin(traceModification: TraceModification): void {
