@@ -418,28 +418,32 @@ export class Trace {
         const node0 = this.nodes.get(t0);
         const node1 = this.nodes.get(t1);
 
-        const originsNode0 = node0.origins != null ? node0.origins : [];
-        const originsNode1 = node1.origins != null ? node1.origins : [];
-        const origins = [];
+        // Should use traceModification origin if exists
+        let origins;
+        const traceOrigins = traceModification.change[0].raw.origins;
+        if (traceOrigins == null || traceOrigins.length == 0) {
+            origins = [];
+            const originsNode0 = node0.origins != null ? node0.origins : [];
+            const originsNode1 = node1.origins != null ? node1.origins : [];
 
-        // Add origins from previous nodes
-        originsNode0.concat(originsNode1).forEach((r) => {
-            if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
-                origins.push(r);
-            }
-        })
+            // Add origins from previous nodes
+            originsNode0.concat(originsNode1).forEach((r) => {
+                if (origins.indexOf(r) < 0 && [t0, t1].indexOf(r) < 0) {
+                    origins.push(r);
+                }
+            })
+        } else {
+            origins = traceOrigins;
+        }
+
 
         // Remove node1 and node2
         this.applyRemove({ type: TraceModificationType.remove, targets: [t0, t1] });
 
-        // Adds the new node. Add requires origins to be set
-        if (origins.length > 0) {
-            traceModification.change[0].raw.origins = origins;
-        }
+        // Adds origins, but don't change traceModification
+        traceModification.change[0].raw.origins = origins;
         this.applyAdd(traceModification);
-        if (origins.length > 0) {
-            traceModification.change[0].raw.origins = [];
-        }
+        traceModification.change[0].raw.origins = traceOrigins;
     }
 
     private peekJoin(traceModification: TraceModification): void {
