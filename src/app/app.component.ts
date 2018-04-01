@@ -230,8 +230,12 @@ export class AppComponent {
 
         var reader = new FileReader();
         reader.onload = function (event) {
-            this.initTrace(new TraceBuilder()
-                .fromFile(event.target["result"]));
+            try {
+                this.initTrace(new TraceBuilder()
+                    .fromFile(event.target["result"]));
+            } catch (e) {
+                alert(e.toString());
+            }
         }.bind(this);
         reader.readAsText(fileToUpload);
     }
