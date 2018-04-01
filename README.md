@@ -2,6 +2,8 @@
 
 Web-based visualization tool for interpreting self modifying code (SMC) code, by providing a timeline for the control flow graph (CFG). A tracer and a conversion would be required to use it for real workloads. There are some samples as a proof-of-concept.
 
+Try it out by clicking [here](https://albf.github.io/smc/index.html).
+
 ## Building
 
 Running it is quite easy, there is nothing sneaky about it. You have two options:
@@ -32,6 +34,26 @@ $ npm start
 ```
 
 Since it's an Angular app, the CLI tool will watch for modified files.
+
+## Model
+
+Currently, the model support is a JSON file with the following properties:
+
+- nodes: contain a map of the initial graph. Although there is an origin array field for each entry they are optional since they are dynamically calculated.
+
+- modifications: an array of modifications, where time is indicated by the index. Accepts:
+  - "add" - adds a group of new nodes.
+  - "modify" - modify a group of existing nodes.
+  - "remove" - remove a group of existing nodes.
+  - "join" - join two existing nodes into a new one.
+  - "split" - split one existing node into two different ones.
+
+- increments: an array of increments, nodes that are added and are not part of a modification - just make the graph larger.
+
+For each giving time, the graph would be: nodes(t+1) = nodes(t) + modifications(t) + increments(t).
+
+There some examples inside the [traces](traces) directory and a [builder](src/app/samples.ts) that could be used to understand the format.
+
 
 ## Unit Tests
 
