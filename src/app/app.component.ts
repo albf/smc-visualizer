@@ -33,8 +33,7 @@ export class AppComponent {
     private viewSelected: ViewType;
 
     selected: number[];     // Used to track selected nodes
-    masked: boolean;        // Indicate if it's under a mask due a selection
-    currentMask: number[];  // Current used mask, required for bookmark
+    currentMask: number[];  // Current used mask, required for bookmark and clean selections
 
     playing: boolean;
     playExit: boolean;
@@ -63,13 +62,11 @@ export class AppComponent {
                     if (this.selected.length == 2) {
                         this.trace.updateSelection(this.selected);
                         this.currentMask = this.selected;
-                        this.masked = true;
                         this.drawTrace();
                     }
                 }
             });
 
-        this.masked = false;
         this.currentMask = null;
         this.playing = false;
         this.playExit = true;
@@ -125,7 +122,6 @@ export class AppComponent {
     }
 
     cleanSelections() {
-        this.masked = false;
         this.currentMask = null;
         this.trace.cleanMask();
         this.drawTrace();
@@ -280,10 +276,8 @@ export class AppComponent {
 
         if (this.currentMask != null) {
             this.trace.updateSelection(this.currentMask);
-            this.masked = true;
         } else {
             this.trace.cleanMask();
-            this.masked = false;
         }
 
         this.drawTrace();
