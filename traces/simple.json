@@ -1,0 +1,258 @@
+{
+    "nodes": {
+        "0": {
+            "code": "a",
+            "destinations": [
+                1,
+                3,
+                4,
+                5
+            ],
+            "origins": []
+        },
+        "1": {
+            "code": "b",
+            "destinations": [
+                2,
+                3
+            ],
+            "origins": [
+                0
+            ]
+        },
+        "2": {
+            "code": "c",
+            "destinations": [
+                3
+            ],
+            "origins": [
+                1
+            ]
+        },
+        "3": {
+            "code": "d",
+            "destinations": [],
+            "origins": [
+                0,
+                1,
+                2
+            ]
+        },
+        "4": {
+            "code": "e",
+            "destinations": [],
+            "origins": [
+                0
+            ]
+        },
+        "5": {
+            "code": "f",
+            "destinations": [
+                6
+            ],
+            "origins": [
+                0
+            ]
+        },
+        "6": {
+            "code": "g",
+            "destinations": [
+                7
+            ],
+            "origins": [
+                5
+            ]
+        },
+        "7": {
+            "code": "h",
+            "destinations": [
+                8
+            ],
+            "origins": [
+                6
+            ]
+        },
+        "8": {
+            "code": "i",
+            "destinations": [
+                9
+            ],
+            "origins": [
+                7
+            ]
+        },
+        "9": {
+            "code": "j",
+            "destinations": [],
+            "origins": [
+                8
+            ]
+        }
+    },
+    "modifications": [
+        {
+            "type": "remove",
+            "causers": [
+                3
+            ],
+            "targets": [
+                9
+            ],
+            "change": null
+        },
+        {
+            "type": "add",
+            "causers": [],
+            "targets": [
+                0
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "new code",
+                        "destinations": [
+                            3,
+                            4
+                        ],
+                        "origins": [
+                            0,
+                            1
+                        ]
+                    },
+                    "index": 15
+                }
+            ]
+        },
+        {
+            "type": "modify",
+            "causers": [
+                5
+            ],
+            "targets": [
+                2
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "changed code",
+                        "destinations": [
+                            3,
+                            4
+                        ],
+                        "origins": []
+                    },
+                    "index": 2
+                }
+            ]
+        },
+        {
+            "type": "join",
+            "causers": [
+                3,
+                3
+            ],
+            "targets": [
+                6,
+                7
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "joined code",
+                        "destinations": [
+                            8
+                        ],
+                        "origins": []
+                    },
+                    "index": 10
+                }
+            ]
+        },
+        {
+            "type": "split",
+            "causers": [
+                0
+            ],
+            "targets": [
+                5
+            ],
+            "change": [
+                {
+                    "raw": {
+                        "code": "f-1",
+                        "destinations": [
+                            10
+                        ],
+                        "origins": [
+                            0
+                        ]
+                    },
+                    "index": 11
+                },
+                {
+                    "raw": {
+                        "code": "f-2",
+                        "destinations": [
+                            10
+                        ],
+                        "origins": [
+                            0
+                        ]
+                    },
+                    "index": 12
+                }
+            ]
+        }
+    ],
+    "increments": [
+        {
+            "additions": [
+                {
+                    "raw": {
+                        "code": "inc-1-1",
+                        "destinations": [
+                            21,
+                            22
+                        ],
+                        "origins": [
+                            3
+                        ]
+                    },
+                    "index": 20
+                },
+                {
+                    "raw": {
+                        "code": "inc-1-2",
+                        "destinations": [],
+                        "origins": [
+                            20
+                        ]
+                    },
+                    "index": 21
+                },
+                {
+                    "raw": {
+                        "code": "inc-1-3",
+                        "destinations": [],
+                        "origins": [
+                            20
+                        ]
+                    },
+                    "index": 22
+                }
+            ]
+        },
+        {
+            "additions": []
+        },
+        {
+            "additions": []
+        },
+        {
+            "additions": []
+        },
+        {
+            "additions": []
+        }
+    ]
+}
