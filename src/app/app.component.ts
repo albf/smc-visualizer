@@ -6,6 +6,13 @@ import { Trace } from "./trace";
 import { TraceSamples } from "./samples";
 import { TraceBuilder } from "./trace-builder";
 
+type ViewType = "normal" | "modification" | "increment";
+
+type Bookmark = {
+    viewType: ViewType,
+    time: number
+    selection: number[];
+}
 
 @Component({
     selector: 'app-root',
@@ -23,13 +30,16 @@ export class AppComponent {
 
     currentTime = 0;
     maxTime = 0;
-    private viewSelected: "normal" | "modification" | "increment";
+    private viewSelected: ViewType;
 
     selected: number[];     // Used to track selected nodes
     masked: boolean;        // Indicate if it's under a mask due a selection
+    currentMask: number[];  // Current used mask, required for bookmark
 
     playing: boolean;
     playExit: boolean;
+
+    bookmarks: Bookmark[];
 
     constructor(modalService: NgbModal) {
         this.modalService = modalService;
@@ -52,7 +62,7 @@ export class AppComponent {
                     this.selected.push(nodeId);
                     if (this.selected.length == 2) {
                         this.trace.updateSelection(this.selected);
-                        this.selected = [];
+                        this.currentMask = this.selected;
                         this.masked = true;
                         this.drawTrace();
                     }
@@ -60,6 +70,7 @@ export class AppComponent {
             });
 
         this.masked = false;
+        this.currentMask = null;
         this.playing = false;
         this.playExit = true;
         this.traceSamples = new TraceSamples();
@@ -94,6 +105,7 @@ export class AppComponent {
         this.trace = trace;
         this.currentTime = 0;
         this.maxTime = this.trace.modifications.length;
+        this.bookmarks = [];
         this.normalView();
     }
 
@@ -114,6 +126,7 @@ export class AppComponent {
 
     cleanSelections() {
         this.masked = false;
+        this.currentMask = null;
         this.trace.cleanMask();
         this.drawTrace();
     }
@@ -238,5 +251,41 @@ export class AppComponent {
             }
         }.bind(this);
         reader.readAsText(fileToUpload);
+    }
+
+    saveBookmark() {
+        this.bookmarks.unshift({
+            viewType: this.viewSelected,
+            time: this.currentTime,
+            selection: this.currentMask
+        });
+
+        // If getting too big, remove the first added.
+        if (this.bookmarks.length > 10) {
+            this.bookmarks = this.bookmarks.slice(0, this.bookmarks.length - 1);
+        }
+        alert("Bookmark saved!");
+    }
+
+    openBookmark(element: number) {
+        const bk = this.bookmarks[element];
+
+        // Fix any time difference
+        while (bk.time > this.currentTime) this.advanceTime();
+        while (bk.time < this.currentTime) this.backTime();
+
+        // Update view type and selection
+        this.viewSelected = bk.viewType;
+        this.currentMask = bk.selection;
+
+        if (this.currentMask != null) {
+            this.trace.updateSelection(this.currentMask);
+            this.masked = true;
+        } else {
+            this.trace.cleanMask();
+            this.masked = false;
+        }
+
+        this.drawTrace();
     }
 }
