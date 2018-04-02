@@ -14,7 +14,7 @@
                 <i class="fa fa-bookmark" aria-hidden="true"></i> Save Bookmark</button>
 
             <div class="btn-group" ngbDropdown role="group">
-                <button class="btn btn-outline-danger" ngbDropdownToggle>
+                <button class="btn btn-primary" ngbDropdownToggle>
                     <i class="fa fa-chevron-circle-down" aria-hidden="true"></i> Open Bookmark</button>
                 <div class="dropdown-menu" ngbDropdownMenu>
                     <li *ngFor="let bk of bookmarks; let i = index" (click)="openBookmark(i)">
